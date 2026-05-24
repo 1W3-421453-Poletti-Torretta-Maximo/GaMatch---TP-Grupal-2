@@ -16,7 +16,7 @@ export default async function candidateRoutes(app: FastifyInstance) {
       limit?: string;
     };
 
-    const gameIds = query.gameIds ? query.gameIds.split(',') : null;
+    const gameIds = query.gameIds ? query.gameIds.split(',') : [];
     const onlineOnly = query.onlineOnly === 'true';
     const rankTolerance = query.rankTolerance ? parseInt(query.rankTolerance) : -1;
     const limit = Math.min(parseInt(query.limit ?? '10'), 50);

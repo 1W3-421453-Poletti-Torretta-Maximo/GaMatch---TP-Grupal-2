@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Candidate, SwipeFilters } from '../types';
+import type { Candidate, SwipeFilters } from '../types';
 import api from '../lib/api';
 
 interface SwipeState {

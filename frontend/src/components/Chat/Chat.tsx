@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Message } from '../../types';
+import type { Message } from '../../types';
 import { getSocket } from '../../lib/socket';
 import api from '../../lib/api';
 import { useAuthStore } from '../../store/authStore';

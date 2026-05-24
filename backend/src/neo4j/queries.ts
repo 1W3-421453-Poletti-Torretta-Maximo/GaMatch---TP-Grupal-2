@@ -5,20 +5,25 @@ export const Q = {
 
   UPSERT_USER: `
     MERGE (u:User {discordId: $discordId})
-    SET u.id        = coalesce(u.id, $id),
-        u.username  = $username,
-        u.avatar    = $avatar,
-        u.updatedAt = datetime()
-    ON CREATE SET u.createdAt = datetime(),
+    ON CREATE SET u.id        = $id,
+                  u.createdAt = datetime(),
                   u.isOnline  = false,
-                  u.bio       = ''
+                  u.bio       = '',
+                  u.username  = $username,
+                  u.avatar    = $avatar,
+                  u.updatedAt = datetime()
+    ON MATCH SET  u.username  = $username,
+                  u.avatar    = $avatar,
+                  u.updatedAt = datetime()
     RETURN u
   `,
 
   GET_USER_BY_ID: `
     MATCH (u:User {id: $id})
     OPTIONAL MATCH (u)-[p:PLAYS]->(g:Game)
-    RETURN u, collect({ game: g, role: p.role, rankId: p.rankId, rankTier: p.rankTier, isLookingNow: p.isLookingNow }) AS games
+    WITH u, p, g
+    RETURN u,
+      [x IN collect(CASE WHEN g IS NOT NULL THEN { game: g, role: p.role, rankId: p.rankId, rankTier: p.rankTier, isLookingNow: p.isLookingNow } ELSE null END) WHERE x IS NOT NULL] AS games
   `,
 
   GET_USER_BY_DISCORD: `
@@ -60,14 +65,16 @@ export const Q = {
 
   GET_CANDIDATES: `
     MATCH (me:User {id: $myId})-[mp:PLAYS]->(game:Game)<-[cp:PLAYS]-(candidate:User)
-    WHERE NOT (me)-[:LIKED|DISLIKED|MATCHED_WITH]->(candidate)
-      AND candidate.id <> $myId
-      AND ($gameIds IS NULL OR game.id IN $gameIds)
+    WHERE candidate.id <> $myId
+      AND NOT (me)-[:LIKED|DISLIKED|MATCHED_WITH]->(candidate)
+      AND (size($gameIds) = 0 OR game.id IN $gameIds)
       AND ($onlineOnly = false OR candidate.isOnline = true)
       AND ($rankTolerance = -1 OR abs(toInteger(cp.rankTier) - toInteger(mp.rankTier)) <= $rankTolerance)
+    WITH DISTINCT candidate
     OPTIONAL MATCH (candidate)-[op:PLAYS]->(og:Game)
-    RETURN DISTINCT candidate,
-           collect(DISTINCT { game: og, role: op.role, rankId: op.rankId, rankTier: op.rankTier, isLookingNow: op.isLookingNow }) AS games
+    WITH candidate, op, og
+    RETURN candidate,
+      [x IN collect(CASE WHEN og IS NOT NULL THEN { game: og, role: op.role, rankId: op.rankId, rankTier: op.rankTier, isLookingNow: op.isLookingNow } ELSE null END) WHERE x IS NOT NULL] AS games
     ORDER BY rand()
     LIMIT $limit
   `,

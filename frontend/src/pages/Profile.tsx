@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../store/authStore';
-import { GameWithMeta } from '../types';
+import type { GameWithMeta } from '../types';
 import api from '../lib/api';
 import { GameBadge } from '../components/GameBadge/GameBadge';
 import { Plus, Trash2 } from 'lucide-react';

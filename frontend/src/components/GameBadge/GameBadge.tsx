@@ -1,4 +1,4 @@
-import { UserGame } from '../../types';
+import type { UserGame } from '../../types';
 
 interface Props {
   game: UserGame;
@@ -6,6 +6,7 @@ interface Props {
 }
 
 export function GameBadge({ game, size = 'md' }: Props) {
+  if (!game?.game) return null;
   const isSmall = size === 'sm';
   return (
     <span

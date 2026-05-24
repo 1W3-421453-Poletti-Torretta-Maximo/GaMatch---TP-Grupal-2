@@ -1,4 +1,4 @@
-import { Candidate } from '../../types';
+import type { Candidate } from '../../types';
 import { GameBadge } from '../GameBadge/GameBadge';
 
 interface Props {

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Match } from '../types';
+import type { Match } from '../types';
 import api from '../lib/api';
 import { GameBadge } from '../components/GameBadge/GameBadge';
 

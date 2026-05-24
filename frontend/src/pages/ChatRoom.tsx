@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Match } from '../types';
+import type { Match } from '../types';
 import api from '../lib/api';
 import { Chat } from '../components/Chat/Chat';
 import { ChevronLeft } from 'lucide-react';

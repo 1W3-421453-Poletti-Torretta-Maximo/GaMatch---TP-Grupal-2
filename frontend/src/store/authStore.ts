@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { User, UserGame } from '../types';
+import type { User, UserGame } from '../types';
 import api from '../lib/api';
 import { connectSocket, disconnectSocket } from '../lib/socket';
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { GameWithMeta } from '../types';
+import type { GameWithMeta } from '../types';
 import { useSwipeStore } from '../store/swipeStore';
 import api from '../lib/api';
 
