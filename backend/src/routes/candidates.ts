@@ -57,25 +57,15 @@ export default async function candidateRoutes(app: FastifyInstance) {
         limit: neo4j.int(limit),
       });
 
-      // Fetch recent dislikes (within 30 minutes)
-      const dislikesResult = await session.run(Q.GET_RECENT_DISLIKES, {
-        myId: myId,
-      });
-
-      const recentDislikeIds = new Set(dislikesResult.records.map((r) => r.get('candidateId')));
-
-      // Filter out candidates with recent dislikes
-      const candidates = result.records
-        .filter((r) => !recentDislikeIds.has(r.get('candidate').properties.id))
-        .map((r) => {
-          const rawProperties = r.get('candidate').properties;
-          const rawGames = r.get('games');
-          
-          return parseNeo4jValues({
-            ...rawProperties,
-            games: rawGames,
-          });
+      const candidates = result.records.map((r) => {
+        const rawProperties = r.get('candidate').properties;
+        const rawGames = r.get('games');
+        
+        return parseNeo4jValues({
+          ...rawProperties,
+          games: rawGames,
         });
+      });
 
       reply.send(candidates);
       

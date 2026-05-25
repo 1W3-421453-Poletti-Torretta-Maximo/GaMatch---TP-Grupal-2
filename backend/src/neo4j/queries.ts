@@ -78,12 +78,6 @@ export const Q = {
     LIMIT $limit
   `,
 
-  GET_RECENT_DISLIKES: `
-    MATCH (me:User {id: $myId})-[dislike:DISLIKED]->(candidate:User)
-    WHERE datetime() - dislike.timestamp < duration({minutes: 30})
-    RETURN candidate.id AS candidateId
-  `,
-
   // ── Swipe ──────────────────────────────────────────────────────────────────
 
   RECORD_LIKE: `
