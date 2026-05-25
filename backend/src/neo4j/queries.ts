@@ -67,13 +67,13 @@ export const Q = {
     MATCH (me:User {id: $myId})-[mp:PLAYS]->(game:Game)<-[cp:PLAYS]-(candidate:User)
     WHERE candidate.id <> $myId
       AND NOT (me)-[:LIKED|MATCHED_WITH]->(candidate)
-      AND NOT (
-        (me)-[d:DISLIKED]->(candidate)
-        AND d.timestamp > datetime() - duration('PT30S')
-      )
       AND (size($gameIds) = 0 OR game.id IN $gameIds)
       AND ($onlineOnly = false OR candidate.isOnline = true)
       AND ($rankTolerance = -1 OR abs(toInteger(cp.rankTier) - toInteger(mp.rankTier)) <= $rankTolerance)
+    WITH DISTINCT me, candidate
+    OPTIONAL MATCH (me)-[d:DISLIKED]->(candidate)
+    WITH candidate, collect(d.timestamp) AS dislikeTimestamps
+    WHERE none(ts IN dislikeTimestamps WHERE ts IS NOT NULL AND ts > datetime() - duration('PT30S'))
     WITH DISTINCT candidate
     OPTIONAL MATCH (candidate)-[op:PLAYS]->(og:Game)
     RETURN DISTINCT candidate,
@@ -91,7 +91,8 @@ export const Q = {
 
   RECORD_DISLIKE: `
     MATCH (a:User {id: $fromId}), (b:User {id: $toId})
-    MERGE (a)-[:DISLIKED {timestamp: datetime()}]->(b)
+    MERGE (a)-[d:DISLIKED]->(b)
+    SET d.timestamp = datetime()
   `,
 
   CHECK_MUTUAL_LIKE: `

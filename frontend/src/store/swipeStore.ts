@@ -47,9 +47,8 @@ export const useSwipeStore = create<SwipeState>((set, get) => ({
       });
       const updated = [...candidates, ...newCandidates];
       set({ candidates: updated, isFetching: false });
-    } catch (error) {
+    } catch {
       set({ isFetching: false });
-      throw error;
     }
   },
 
