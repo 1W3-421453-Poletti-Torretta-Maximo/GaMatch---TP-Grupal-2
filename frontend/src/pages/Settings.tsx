@@ -6,6 +6,7 @@ import api from '../lib/api';
 export default function Settings() {
   const [catalog, setCatalog] = useState<GameWithMeta[]>([]);
   const { filters, setFilters, fetchCandidates } = useSwipeStore();
+  const [applied, setApplied] = useState(false);
 
   useEffect(() => {
     api.get<GameWithMeta[]>('/games').then(({ data }) => setCatalog(data));
@@ -20,11 +21,20 @@ export default function Settings() {
 
   const applyFilters = async () => {
     await fetchCandidates();
-    window.history.back();
+    setApplied(true);
+    setTimeout(() => {
+      window.history.back();
+    }, 1200);
   };
 
   return (
-    <main className="flex-1 pb-20 pt-6 px-4 max-w-md mx-auto w-full">
+    <main className="flex-1 pb-20 pt-6 px-4 max-w-md mx-auto w-full relative">
+      {applied && (
+        <div className="absolute top-2 left-4 right-4 p-3 bg-green-500 text-white text-center text-sm font-bold rounded-xl shadow-lg z-50 bg-brand-gradient">
+          ¡Filtro aplicado!
+        </div>
+      )}
+
       <h2 className="text-xl font-bold text-gray-800 mb-5">Preferencias de búsqueda</h2>
 
       {/* Online only */}
@@ -98,9 +108,10 @@ export default function Settings() {
 
       <button
         onClick={applyFilters}
-        className="w-full py-3.5 rounded-2xl bg-brand-gradient text-white font-bold hover:opacity-90 transition shadow-card"
+        disabled={applied}
+        className="w-full py-3.5 rounded-2xl bg-brand-gradient text-white font-bold hover:opacity-90 disabled:opacity-50 transition shadow-card"
       >
-        Aplicar filtros
+        {applied ? 'Aplicando...' : 'Aplicar filtros'}
       </button>
     </main>
   );
