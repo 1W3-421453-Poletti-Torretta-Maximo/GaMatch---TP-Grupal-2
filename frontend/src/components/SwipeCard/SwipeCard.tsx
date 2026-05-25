@@ -50,7 +50,7 @@ export function SwipeCard({ candidate, style, onLike, onDislike, isTop }: Props)
           <div className="flex justify-center gap-6 mt-2">
             <button
               onClick={onDislike}
-              className="flex items-center justify-center h-14 w-14 rounded-full bg-white shadow-lg text-2xl hover:scale-110 active:scale-95 transition-transform"
+              className="flex items-center justify-center h-14 w-14 rounded-full bg-white shadow-lg text-2xl text-red-500 hover:scale-110 active:scale-95 transition-transform"
               aria-label="Dislike"
             >
               ✕
@@ -60,7 +60,7 @@ export function SwipeCard({ candidate, style, onLike, onDislike, isTop }: Props)
               className="flex items-center justify-center h-14 w-14 rounded-full bg-brand-gradient shadow-lg text-2xl hover:scale-110 active:scale-95 transition-transform"
               aria-label="Like"
             >
-              ♥
+              🎮
             </button>
           </div>
         )}
