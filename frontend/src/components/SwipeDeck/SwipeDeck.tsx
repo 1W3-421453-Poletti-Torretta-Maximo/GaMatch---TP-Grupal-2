@@ -9,14 +9,19 @@ import { getSocket } from '../../lib/socket';
 const SWIPE_THRESHOLD = 120;
 
 export function SwipeDeck() {
-  const { candidates, fetchCandidates, removeTop, isLoading } = useSwipeStore();
+  const { candidates, fetchCandidates, removeTop, isLoading, isFetching } = useSwipeStore();
 
-  useEffect(() => { fetchCandidates(); }, [fetchCandidates]);
-
-  // Refetch when deck is almost empty
+  // Initial fetch on mount
   useEffect(() => {
-    if (candidates.length <= 3 && !isLoading) fetchCandidates();
-  }, [candidates.length, isLoading, fetchCandidates]);
+    fetchCandidates();
+  }, []); // Solo en mount
+
+  // Refetch when deck is running low (pero no mientras se está fetcheando)
+  useEffect(() => {
+    if (candidates.length <= 5 && !isFetching && !isLoading) {
+      fetchCandidates();
+    }
+  }, [candidates.length, isFetching, isLoading]);
 
   const [{ x, rotate, opacity }, api_spring] = useSpring(() => ({
     x: 0, rotate: 0, opacity: 1,
