@@ -4,7 +4,7 @@ import api from '../lib/api';
 
 interface SwipeState {
   candidates: Candidate[];
-  seenCandidates: Map<string, number>;
+  seenCandidates: Set<string>;
   isLoading: boolean;
   isFetching: boolean;
   filters: SwipeFilters;
@@ -15,7 +15,7 @@ interface SwipeState {
 
 export const useSwipeStore = create<SwipeState>((set, get) => ({
   candidates: [],
-  seenCandidates: new Map(),
+  seenCandidates: new Set(),
   isLoading: false,
   isFetching: false,
   filters: {
@@ -39,12 +39,7 @@ export const useSwipeStore = create<SwipeState>((set, get) => ({
 
     try {
       const { data } = await api.get<Candidate[]>('/candidates', { params });
-      const now = Date.now();
-      const COOLDOWN_MS = 30000;
-      const newCandidates = data.filter(c => {
-        const seenTime = seenCandidates.get(c.id);
-        return seenTime === undefined || (now - seenTime) >= COOLDOWN_MS;
-      });
+      const newCandidates = data.filter(c => !seenCandidates.has(c.id));
       const updated = [...candidates, ...newCandidates];
       set({ candidates: updated, isFetching: false });
     } catch {
@@ -55,7 +50,7 @@ export const useSwipeStore = create<SwipeState>((set, get) => ({
   removeTop: () => set((s) => {
     const [first, ...rest] = s.candidates;
     if (first) {
-      s.seenCandidates.set(first.id, Date.now());
+      s.seenCandidates.add(first.id);
     }
     return { candidates: rest };
   }),
@@ -64,6 +59,6 @@ export const useSwipeStore = create<SwipeState>((set, get) => ({
     set((s) => ({
       filters: { ...s.filters, ...f },
       candidates: [],
-      seenCandidates: new Map(),
+      seenCandidates: new Set(),
     })),
 }));
