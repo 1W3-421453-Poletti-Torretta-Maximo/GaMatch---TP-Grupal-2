@@ -20,4 +20,19 @@ export default async function matchRoutes(app: FastifyInstance) {
     }));
     reply.send(matches);
   });
+
+  app.delete('/:roomId', { preHandler: requireAuth }, async (req, reply) => {
+    const { userId } = (req as typeof req & AuthRequest).user;
+    const { roomId } = req.params as { roomId: string };
+
+    const session = getSession();
+    try {
+      await session.run(Q.DELETE_MATCH, { userId, roomId });
+      await session.close();
+      reply.code(200).send({ success: true, roomId });
+    } catch (error) {
+      await session.close();
+      reply.code(500).send({ error: 'Failed to delete match' });
+    }
+  });
 }

@@ -115,6 +115,15 @@ export const Q = {
     ORDER BY m.matchedAt DESC
   `,
 
+  DELETE_MATCH: `
+    MATCH (a:User {id: $userId})-[m:MATCHED_WITH {roomId: $roomId}]->(b:User)
+    DELETE m
+    WITH a, b, $roomId AS roomId
+    MATCH (b)-[m2:MATCHED_WITH {roomId: roomId}]->(a)
+    DELETE m2
+    RETURN roomId
+  `,
+
   // ── Messages ───────────────────────────────────────────────────────────────
 
   SAVE_MESSAGE: `

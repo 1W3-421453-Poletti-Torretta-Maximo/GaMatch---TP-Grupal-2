@@ -9,11 +9,35 @@ export default function Matches() {
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
+  const fetchMatches = async () => {
+    try {
+      const { data } = await api.get<Match[]>('/matches');
+      setMatches(data);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    api.get<Match[]>('/matches')
-      .then(({ data }) => setMatches(data))
-      .finally(() => setIsLoading(false));
+    fetchMatches();
   }, []);
+
+  const handleDeleteMatch = async (roomId: string, username: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    const confirmed = window.confirm(
+      `¿Realmente queres eliminar el match con ${username}?`
+    );
+    
+    if (!confirmed) return;
+
+    try {
+      await api.delete(`/matches/${roomId}`);
+      setMatches((prev) => prev.filter((m) => m.roomId !== roomId));
+    } catch (error) {
+      console.error('Error al eliminar match:', error);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -55,7 +79,16 @@ export default function Matches() {
                   ))}
                 </div>
               </div>
-              <span className="text-brand-400 text-xl">→</span>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <button
+                  onClick={(e) => handleDeleteMatch(m.roomId, m.user.username, e)}
+                  className="text-red-400 hover:text-red-600 transition p-1 hover:bg-red-50 rounded-full"
+                  title="Eliminar match"
+                >
+                  ✕
+                </button>
+                <span className="text-brand-400 text-xl">→</span>
+              </div>
             </li>
           ))}
         </ul>
