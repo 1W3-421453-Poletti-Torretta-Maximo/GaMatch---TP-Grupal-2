@@ -29,8 +29,8 @@ export function registerSocketHandlers(io: Server): void {
     socket.join(userId);
 
     // Mark user online in Neo4j
-    const onlineSession = getSession();
-    onlineSession.run(Q.SET_USER_ONLINE, { id: userId, isOnline: true }).then(() => onlineSession.close());
+    getSession().run(Q.SET_USER_ONLINE, { id: userId, isOnline: true }).then((s) => s.close?.());
+
     // Join a chat room
     socket.on('join_room', (roomId: string) => {
       socket.join(roomId);
@@ -63,8 +63,9 @@ export function registerSocketHandlers(io: Server): void {
     });
 
     socket.on('disconnect', () => {
-      const onlineSession = getSession();
-      onlineSession.run(Q.SET_USER_ONLINE, { id: userId, isOnline: true }).then(() => onlineSession.close());
+      getSession()
+        .run(Q.SET_USER_ONLINE, { id: userId, isOnline: false })
+        .then((s) => s.close?.());
     });
   });
 }
