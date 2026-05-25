@@ -38,7 +38,7 @@ export function MatchModal() {
 
         <h2 className="mt-6 text-2xl font-bold text-brand-700">¡GaMatch!</h2>
         <p className="text-gray-500 text-sm mt-1 mb-6">
-          Vos y <strong>{matchData.other.username}</strong> se gustaron
+          Vos y <strong>{matchData.other.username}</strong> coincidieron
         </p>
 
         <div className="flex justify-center gap-4 mb-6">
