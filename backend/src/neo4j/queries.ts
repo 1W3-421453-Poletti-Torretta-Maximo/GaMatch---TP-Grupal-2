@@ -67,7 +67,10 @@ export const Q = {
     MATCH (me:User {id: $myId})-[mp:PLAYS]->(game:Game)<-[cp:PLAYS]-(candidate:User)
     WHERE candidate.id <> $myId
       AND NOT (me)-[:LIKED|MATCHED_WITH]->(candidate)
-      AND NOT ((me)-[:DISLIKED]->(candidate) AND datetime() - (me)-[:DISLIKED]->(candidate).timestamp < duration({minutes: 30}))
+      AND NOT EXISTS {
+        MATCH (me)-[dislike:DISLIKED]->(candidate)
+        WHERE datetime() - dislike.timestamp < duration({minutes: 30})
+      }
       AND (size($gameIds) = 0 OR game.id IN $gameIds)
       AND ($onlineOnly = false OR candidate.isOnline = true)
       AND ($rankTolerance = -1 OR abs(toInteger(cp.rankTier) - toInteger(mp.rankTier)) <= $rankTolerance)
