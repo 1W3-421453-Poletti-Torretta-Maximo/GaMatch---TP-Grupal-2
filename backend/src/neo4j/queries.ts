@@ -23,7 +23,7 @@ export const Q = {
     OPTIONAL MATCH (u)-[p:PLAYS]->(g:Game)
     WITH u, p, g
     RETURN u,
-      [x IN collect(CASE WHEN g IS NOT NULL THEN { game: g, role: p.role, rankId: p.rankId, rankTier: p.rankTier, isLookingNow: p.isLookingNow } ELSE null END) WHERE x IS NOT NULL] AS games
+      [x IN collect(CASE WHEN g IS NOT NULL THEN { game: properties(g), role: p.role, rankId: p.rankId, rankTier: p.rankTier, isLookingNow: p.isLookingNow } ELSE null END) WHERE x IS NOT NULL] AS games
   `,
 
   GET_USER_BY_DISCORD: `
@@ -74,7 +74,7 @@ export const Q = {
     OPTIONAL MATCH (candidate)-[op:PLAYS]->(og:Game)
     WITH candidate, op, og
     RETURN candidate,
-      [x IN collect(CASE WHEN og IS NOT NULL THEN { game: og, role: op.role, rankId: op.rankId, rankTier: op.rankTier, isLookingNow: op.isLookingNow } ELSE null END) WHERE x IS NOT NULL] AS games
+      [x IN collect(CASE WHEN og IS NOT NULL THEN { game: properties(og), role: op.role, rankId: op.rankId, rankTier: op.rankTier, isLookingNow: op.isLookingNow } ELSE null END) WHERE x IS NOT NULL] AS games
     ORDER BY rand()
     LIMIT $limit
   `,
@@ -111,7 +111,7 @@ export const Q = {
     RETURN other,
            m.roomId AS roomId,
            m.matchedAt AS matchedAt,
-           collect({ game: og, role: op.role, rankId: op.rankId }) AS games
+           collect({ game: properties(og), role: op.role, rankId: op.rankId }) AS games
     ORDER BY m.matchedAt DESC
   `,
 
