@@ -29,6 +29,17 @@ export default async function swipeRoutes(app: FastifyInstance) {
       return reply.send({ match: false });
     }
 
+    // Check if match already exists (recovered from deletion)
+    const existingMatchResult = await session.run(
+      `MATCH (a:User {id: $userId})-[m:MATCHED_WITH]->(b:User {id: $targetId}) RETURN COUNT(m) > 0 AS exists`,
+      { userId, targetId }
+    );
+    const existingMatch = existingMatchResult.records[0].get('exists');
+    if (existingMatch) {
+      await session.close();
+      return reply.send({ match: false });
+    }
+
     await session.run(Q.RECORD_LIKE, { fromId: userId, toId: targetId });
 
     const mutualResult = await session.run(Q.CHECK_MUTUAL_LIKE, { fromId: userId, toId: targetId });

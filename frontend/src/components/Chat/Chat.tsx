@@ -23,18 +23,25 @@ export function Chat({ roomId, otherUser }: Props) {
     const socket = getSocket();
     socket.emit('join_room', roomId);
 
-    socket.on('new_message', (msg: Message) => {
-      setMessages((prev) => [...prev, msg]);
-    });
+    // Remove any previously attached listeners to prevent duplicates
+    socket.removeAllListeners('new_message');
+    socket.removeAllListeners('user_typing');
 
-    socket.on('user_typing', () => {
+    const handleNewMessage = (msg: Message) => {
+      setMessages((prev) => [...prev, msg]);
+    };
+
+    const handleUserTyping = () => {
       setIsTyping(true);
       setTimeout(() => setIsTyping(false), 2000);
-    });
+    };
+
+    socket.on('new_message', handleNewMessage);
+    socket.on('user_typing', handleUserTyping);
 
     return () => {
-      socket.off('new_message');
-      socket.off('user_typing');
+      socket.off('new_message', handleNewMessage);
+      socket.off('user_typing', handleUserTyping);
     };
   }, [roomId]);
 

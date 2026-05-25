@@ -72,8 +72,7 @@ export const Q = {
       AND ($rankTolerance = -1 OR abs(toInteger(cp.rankTier) - toInteger(mp.rankTier)) <= $rankTolerance)
     WITH DISTINCT candidate
     OPTIONAL MATCH (candidate)-[op:PLAYS]->(og:Game)
-    WITH candidate, op, og
-    RETURN candidate,
+    RETURN DISTINCT candidate,
       [x IN collect(CASE WHEN og IS NOT NULL THEN { game: properties(og), role: op.role, rankId: op.rankId, rankTier: op.rankTier, isLookingNow: op.isLookingNow } ELSE null END) WHERE x IS NOT NULL] AS games
     ORDER BY rand()
     LIMIT $limit
@@ -121,7 +120,13 @@ export const Q = {
     WITH a, b, $roomId AS roomId
     MATCH (b)-[m2:MATCHED_WITH {roomId: roomId}]->(a)
     DELETE m2
-    RETURN roomId
+    WITH a, b
+    OPTIONAL MATCH (a)-[like1:LIKED]->(b)
+    DELETE like1
+    WITH a, b
+    OPTIONAL MATCH (b)-[like2:LIKED]->(a)
+    DELETE like2
+    RETURN $roomId AS roomId
   `,
 
   // ── Messages ───────────────────────────────────────────────────────────────

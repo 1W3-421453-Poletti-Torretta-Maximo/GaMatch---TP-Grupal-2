@@ -18,7 +18,7 @@ export function SwipeDeck() {
 
   // Refetch when deck is running low (pero no mientras se está fetcheando)
   useEffect(() => {
-    if (candidates.length <= 5 && !isFetching && !isLoading) {
+    if (candidates.length <= 3 && !isFetching && !isLoading) {
       fetchCandidates();
     }
   }, [candidates.length, isFetching, isLoading]);
@@ -32,18 +32,19 @@ export function SwipeDeck() {
     const top = candidates[0];
     if (!top) return;
 
+    removeTop();
+
     const targetX = direction === 'like' ? 600 : -600;
     await api_spring.start({ x: targetX, opacity: 0 });
-    api_spring.set({ x: 0, rotate: 0, opacity: 1 });
 
     try {
       const { data } = await api.post('/swipe', { targetId: top.id, direction });
       if (data.match) {
         getSocket().emit('join_room', data.roomId);
       }
-    } catch { /* handled by interceptor */ }
-
-    removeTop();
+    } catch { /* handled by interceptor */ } finally {
+      api_spring.set({ x: 0, rotate: 0, opacity: 1 });
+    }
   };
 
   const bind = useDrag(({ down, movement: [mx], velocity: [vx], last }) => {

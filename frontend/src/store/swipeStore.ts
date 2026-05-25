@@ -61,5 +61,9 @@ export const useSwipeStore = create<SwipeState>((set, get) => ({
   }),
 
   setFilters: (f) =>
-    set((s) => ({ filters: { ...s.filters, ...f } })),
+    set((s) => ({
+      filters: { ...s.filters, ...f },
+      candidates: [],
+      seenCandidates: new Set(),
+    })),
 }));
