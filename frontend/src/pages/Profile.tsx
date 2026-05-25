@@ -3,10 +3,10 @@ import { useAuthStore } from '../store/authStore';
 import type { GameWithMeta } from '../types';
 import api from '../lib/api';
 import { GameBadge } from '../components/GameBadge/GameBadge';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, LogOut } from 'lucide-react';
 
 export default function Profile() {
-  const { user, games, refreshProfile } = useAuthStore();
+  const { user, games, refreshProfile, logout } = useAuthStore();
   const [catalog, setCatalog] = useState<GameWithMeta[]>([]);
   const [bio, setBio] = useState(user?.bio ?? '');
   const [saving, setSaving] = useState(false);
@@ -167,6 +167,17 @@ export default function Profile() {
             </div>
           </div>
         )}
+      </section>
+
+      {/* Logout */}
+      <section className="mt-8 mb-4 flex justify-center">
+        <button
+          onClick={() => logout()}
+          className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl border-2 border-red-100 bg-red-50 text-red-600 text-sm font-bold hover:bg-red-100 hover:border-red-200 transition"
+        >
+          <LogOut size={18} />
+          Cerrar sesión
+        </button>
       </section>
     </main>
   );
