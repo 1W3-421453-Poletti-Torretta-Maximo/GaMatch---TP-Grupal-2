@@ -44,7 +44,6 @@ export function SwipeCard({ candidate, style, onLike, onDislike, isTop }: Props)
             <GameBadge key={i} game={g} size="sm" />
           ))}
         </div>
-
         {/* Action buttons — only on top card */}
         {isTop && (
           <div className="flex justify-center gap-6 mt-2">
@@ -57,10 +56,17 @@ export function SwipeCard({ candidate, style, onLike, onDislike, isTop }: Props)
             </button>
             <button
                 onClick={onLike}
-                className="flex items-center justify-center h-14 w-14 rounded-full bg-brand-gradient shadow-lg text-2xl hover:scale-110 active:scale-95 transition-transform"
+                className="flex items-center justify-center h-14 w-14 rounded-full bg-brand-gradient shadow-lg hover:scale-110 active:scale-95 transition-transform"
                 aria-label="Like"
             >
-              🎮
+              <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-8 w-8 text-white"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+              >
+                <path d="M12 2a2 2 0 0 0-2 2v6H7a3 3 0 0 0-3 3v7h2v-7a1 1 0 0 1 1-1h3v8h2v-8h3a1 1 0 0 1 1 1v7h2v-7a3 3 0 0 0-3-3h-3V4a2 2 0 0 0-2-2z"/>
+              </svg>
             </button>
           </div>
         )}
