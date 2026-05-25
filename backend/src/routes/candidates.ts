@@ -6,7 +6,23 @@ import neo4j from 'neo4j-driver'; // 1. Agrega esto para tipar los números
 
 type AuthRequest = { user: JwtPayload };
 
-// (Aquí mantienes la función parseNeo4jValues que hicimos antes)
+function parseNeo4jValues(obj: any): any {
+  if (obj === null || obj === undefined) return obj;
+  if (typeof obj === 'object' && typeof obj.toNumber === 'function') {
+    return obj.toNumber();
+  }
+  if (Array.isArray(obj)) {
+    return obj.map(parseNeo4jValues);
+  }
+  if (typeof obj === 'object') {
+    const result: any = {};
+    for (const key in obj) {
+      result[key] = parseNeo4jValues(obj[key]);
+    }
+    return result;
+  }
+  return obj;
+}
 
 export default async function candidateRoutes(app: FastifyInstance) {
   app.get('/', { preHandler: [requireAuth as any] }, async (req, reply) => {
