@@ -4,9 +4,9 @@ import api from '../lib/api';
 
 interface SwipeState {
   candidates: Candidate[];
-  seenCandidates: Set<string>; // Track de candidatos ya vistos
+  seenCandidates: Map<string, number>;
   isLoading: boolean;
-  isFetching: boolean; // Evitar refetch simultáneo
+  isFetching: boolean;
   filters: SwipeFilters;
   fetchCandidates: () => Promise<void>;
   removeTop: () => void;
@@ -15,7 +15,7 @@ interface SwipeState {
 
 export const useSwipeStore = create<SwipeState>((set, get) => ({
   candidates: [],
-  seenCandidates: new Set(),
+  seenCandidates: new Map(),
   isLoading: false,
   isFetching: false,
   filters: {
@@ -26,13 +26,12 @@ export const useSwipeStore = create<SwipeState>((set, get) => ({
 
   fetchCandidates: async () => {
     const { isFetching } = get();
-    // Evitar múltiples fetches simultáneos
     if (isFetching) return;
 
     set({ isFetching: true });
     const { filters, seenCandidates, candidates } = get();
     const params: Record<string, string> = {
-      limit: '30', // Aumentar límite para tener más buffer
+      limit: '30',
       rankTolerance: String(filters.rankTolerance),
       onlineOnly: String(filters.onlineOnly),
     };
@@ -40,9 +39,12 @@ export const useSwipeStore = create<SwipeState>((set, get) => ({
 
     try {
       const { data } = await api.get<Candidate[]>('/candidates', { params });
-      // Filtrar candidatos ya vistos/swiped
-      const newCandidates = data.filter(c => !seenCandidates.has(c.id));
-      // Mantener candidatos actuales + agregar nuevos al final
+      const now = Date.now();
+      const COOLDOWN_MS = 30000;
+      const newCandidates = data.filter(c => {
+        const seenTime = seenCandidates.get(c.id);
+        return seenTime === undefined || (now - seenTime) >= COOLDOWN_MS;
+      });
       const updated = [...candidates, ...newCandidates];
       set({ candidates: updated, isFetching: false });
     } catch (error) {
@@ -54,8 +56,7 @@ export const useSwipeStore = create<SwipeState>((set, get) => ({
   removeTop: () => set((s) => {
     const [first, ...rest] = s.candidates;
     if (first) {
-      // Agregar el candidato removido al set de vistos
-      s.seenCandidates.add(first.id);
+      s.seenCandidates.set(first.id, Date.now());
     }
     return { candidates: rest };
   }),
@@ -64,6 +65,6 @@ export const useSwipeStore = create<SwipeState>((set, get) => ({
     set((s) => ({
       filters: { ...s.filters, ...f },
       candidates: [],
-      seenCandidates: new Set(),
+      seenCandidates: new Map(),
     })),
 }));
