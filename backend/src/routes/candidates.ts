@@ -11,11 +11,11 @@ type AuthRequest = { user: JwtPayload };
 export default async function candidateRoutes(app: FastifyInstance) {
   app.get('/', { preHandler: [requireAuth as any] }, async (req, reply) => {
     
-    // 2. Extraemos el payload completo del usuario como "any" temporalmente
-    const userPayload = (req as FastifyRequest & AuthRequest).user as any;
+    // 2. Extraemos el payload forzando a TypeScript a aceptar cualquier propiedad
+    const userPayload = (req as any).user as Record<string, any>;
     
     // 3. Rescate seguro del ID: cubrimos los 3 nombres de variables más comunes
-    const myId = userPayload.userId || userPayload.id || userPayload.discordId;
+    const myId = userPayload?.userId || userPayload?.id || userPayload?.discordId;
 
     if (!myId) {
       console.error("Token no contiene un ID reconocible:", userPayload);
