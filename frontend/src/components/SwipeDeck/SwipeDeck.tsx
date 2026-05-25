@@ -14,11 +14,11 @@ export function SwipeDeck() {
   // Initial fetch on mount
   useEffect(() => {
     fetchCandidates();
-  }, []); // Solo en mount
+  }, []);
 
   // Refetch when deck is running low (pero no mientras se está fetcheando)
   useEffect(() => {
-    if (candidates.length <= 3 && !isFetching && !isLoading) {
+    if ((candidates.length <= 3 || candidates.length === 0) && !isFetching && !isLoading) {
       fetchCandidates();
     }
   }, [candidates.length, isFetching, isLoading]);
@@ -44,6 +44,11 @@ export function SwipeDeck() {
       }
     } catch { /* handled by interceptor */ } finally {
       api_spring.set({ x: 0, rotate: 0, opacity: 1 });
+      // Trigger refetch if deck is now empty or very low
+      const { candidates: currentCandidates, isFetching: isFetching2 } = useSwipeStore.getState();
+      if ((currentCandidates.length < 3) && !isFetching2) {
+        fetchCandidates();
+      }
     }
   };
 
