@@ -58,13 +58,7 @@ export function Chat({ roomId, otherUser }: Props) {
   };
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100">
-        <img src={otherUser.avatar} className="h-10 w-10 rounded-full object-cover" alt="" />
-        <span className="font-semibold text-gray-800">{otherUser.username}</span>
-      </div>
-
+    <div className="flex flex-col absolute inset-0">
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 scrollbar-hide">
         {messages.map((msg) => {
@@ -101,7 +95,7 @@ export function Chat({ roomId, otherUser }: Props) {
       </div>
 
       {/* Input */}
-      <div className="px-4 py-3 border-t border-gray-100 flex gap-2 items-center">
+      <div className="px-4 py-3 border-t border-gray-100 flex gap-2 items-center bg-white sticky bottom-0">
         <input
           value={input}
           onChange={handleChange}

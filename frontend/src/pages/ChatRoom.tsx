@@ -29,8 +29,8 @@ export default function ChatRoom() {
   }
 
   return (
-    <div className="flex flex-col h-screen pb-0 max-w-md mx-auto w-full">
-      <header className="flex items-center gap-2 px-4 py-3 border-b border-gray-100 bg-white">
+    <div className="flex flex-col flex-1 pb-16 max-w-md mx-auto w-full relative h-[100dvh]">
+      <header className="flex items-center gap-2 px-4 py-3 border-b border-gray-100 bg-white z-10 sticky top-0">
         <button
           onClick={() => navigate('/matches')}
           className="p-1 rounded-lg text-gray-500 hover:bg-gray-100 transition"
@@ -45,7 +45,7 @@ export default function ChatRoom() {
           )}
         </div>
       </header>
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 w-full bg-white relative">
         <Chat roomId={roomId} otherUser={match.user} />
       </div>
     </div>
