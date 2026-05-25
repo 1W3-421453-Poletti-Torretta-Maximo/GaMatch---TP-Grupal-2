@@ -7,6 +7,7 @@ interface SwipeState {
   seenCandidates: Set<string>;
   isLoading: boolean;
   isFetching: boolean;
+  hasMore: boolean;
   filters: SwipeFilters;
   fetchCandidates: () => Promise<void>;
   removeTop: () => void;
@@ -18,6 +19,7 @@ export const useSwipeStore = create<SwipeState>((set, get) => ({
   seenCandidates: new Set(),
   isLoading: false,
   isFetching: false,
+  hasMore: true,
   filters: {
     gameIds: [],
     onlineOnly: false,
@@ -39,9 +41,10 @@ export const useSwipeStore = create<SwipeState>((set, get) => ({
 
     try {
       const { data } = await api.get<Candidate[]>('/candidates', { params });
-      const newCandidates = data.filter(c => !seenCandidates.has(c.id));
+      const existingIds = new Set([...seenCandidates, ...candidates.map(c => c.id)]);
+      const newCandidates = data.filter(c => !existingIds.has(c.id));
       const updated = [...candidates, ...newCandidates];
-      set({ candidates: updated, isFetching: false });
+      set({ candidates: updated, isFetching: false, hasMore: newCandidates.length > 0 });
     } catch {
       set({ isFetching: false });
     }
@@ -60,5 +63,6 @@ export const useSwipeStore = create<SwipeState>((set, get) => ({
       filters: { ...s.filters, ...f },
       candidates: [],
       seenCandidates: new Set(),
+      hasMore: true,
     })),
 }));
