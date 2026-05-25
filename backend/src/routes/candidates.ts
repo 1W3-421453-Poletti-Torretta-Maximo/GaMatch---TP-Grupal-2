@@ -48,24 +48,34 @@ export default async function candidateRoutes(app: FastifyInstance) {
     const session = getSession();
     
     try {
-      // 4. Parámetros hiper-estrictos para que el driver de Neo4j no se queje
+      // Fetch candidates
       const result = await session.run(Q.GET_CANDIDATES, {
         myId: myId,
         gameIds: gameIds,
         onlineOnly: onlineOnly,
-        rankTolerance: neo4j.int(rankTolerance), // Obligamos a que sea Integer
-        limit: neo4j.int(limit),                 // Obligamos a que sea Integer
+        rankTolerance: neo4j.int(rankTolerance),
+        limit: neo4j.int(limit),
       });
 
-      const candidates = result.records.map((r) => {
-        const rawProperties = r.get('candidate').properties;
-        const rawGames = r.get('games');
-        
-        return parseNeo4jValues({
-          ...rawProperties,
-          games: rawGames,
-        });
+      // Fetch recent dislikes (within 30 minutes)
+      const dislikesResult = await session.run(Q.GET_RECENT_DISLIKES, {
+        myId: myId,
       });
+
+      const recentDislikeIds = new Set(dislikesResult.records.map((r) => r.get('candidateId')));
+
+      // Filter out candidates with recent dislikes
+      const candidates = result.records
+        .filter((r) => !recentDislikeIds.has(r.get('candidate').properties.id))
+        .map((r) => {
+          const rawProperties = r.get('candidate').properties;
+          const rawGames = r.get('games');
+          
+          return parseNeo4jValues({
+            ...rawProperties,
+            games: rawGames,
+          });
+        });
 
       reply.send(candidates);
       

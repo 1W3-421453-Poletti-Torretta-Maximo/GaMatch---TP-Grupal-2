@@ -66,11 +66,7 @@ export const Q = {
   GET_CANDIDATES: `
     MATCH (me:User {id: $myId})-[mp:PLAYS]->(game:Game)<-[cp:PLAYS]-(candidate:User)
     WHERE candidate.id <> $myId
-      AND NOT (me)-[:LIKED|MATCHED_WITH]->(candidate)
-      AND NOT EXISTS {
-        MATCH (me)-[dislike:DISLIKED]->(candidate)
-        WHERE datetime() - dislike.timestamp < duration({minutes: 30})
-      }
+      AND NOT (me)-[:LIKED|DISLIKED|MATCHED_WITH]->(candidate)
       AND (size($gameIds) = 0 OR game.id IN $gameIds)
       AND ($onlineOnly = false OR candidate.isOnline = true)
       AND ($rankTolerance = -1 OR abs(toInteger(cp.rankTier) - toInteger(mp.rankTier)) <= $rankTolerance)
@@ -80,6 +76,12 @@ export const Q = {
       [x IN collect(CASE WHEN og IS NOT NULL THEN { game: properties(og), role: op.role, rankId: op.rankId, rankTier: op.rankTier, isLookingNow: op.isLookingNow } ELSE null END) WHERE x IS NOT NULL] AS games
     ORDER BY rand()
     LIMIT $limit
+  `,
+
+  GET_RECENT_DISLIKES: `
+    MATCH (me:User {id: $myId})-[dislike:DISLIKED]->(candidate:User)
+    WHERE datetime() - dislike.timestamp < duration({minutes: 30})
+    RETURN candidate.id AS candidateId
   `,
 
   // ── Swipe ──────────────────────────────────────────────────────────────────
