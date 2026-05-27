@@ -101,7 +101,8 @@ export const Q = {
 
   RECORD_DISLIKE: `
     MATCH (a:User {id: $fromId}), (b:User {id: $toId})
-    MERGE (a)-[:DISLIKED {timestamp: datetime()}]->(b)
+    MERGE (a)-[d:DISLIKED]->(b)
+    SET d.timestamp = datetime()
   `,
 
   CHECK_MUTUAL_LIKE: `

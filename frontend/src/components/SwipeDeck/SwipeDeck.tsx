@@ -9,7 +9,7 @@ import { getSocket } from '../../lib/socket';
 const SWIPE_THRESHOLD = 120;
 
 export function SwipeDeck() {
-  const { candidates, fetchCandidates, removeTop, isLoading, isFetching } = useSwipeStore();
+  const { candidates, fetchCandidates, removeTop, isLoading, isFetching, hasMore } = useSwipeStore();
 
   // Initial fetch on mount
   useEffect(() => {
@@ -18,10 +18,10 @@ export function SwipeDeck() {
 
   // Refetch when deck is running low (pero no mientras se está fetcheando)
   useEffect(() => {
-    if ((candidates.length <= 3 || candidates.length === 0) && !isFetching && !isLoading) {
+    if (hasMore && (candidates.length <= 3 || candidates.length === 0) && !isFetching && !isLoading) {
       fetchCandidates();
     }
-  }, [candidates.length, isFetching, isLoading]);
+  }, [candidates.length, isFetching, isLoading, hasMore]);
 
   const [{ x, rotate, opacity }, api_spring] = useSpring(() => ({
     x: 0, rotate: 0, opacity: 1,
@@ -45,8 +45,8 @@ export function SwipeDeck() {
     } catch { /* handled by interceptor */ } finally {
       api_spring.set({ x: 0, rotate: 0, opacity: 1 });
       // Trigger refetch if deck is now empty or very low
-      const { candidates: currentCandidates, isFetching: isFetching2 } = useSwipeStore.getState();
-      if ((currentCandidates.length < 3) && !isFetching2) {
+      const { candidates: currentCandidates, isFetching: isFetching2, hasMore: hasMore2 } = useSwipeStore.getState();
+      if (hasMore2 && (currentCandidates.length < 3) && !isFetching2) {
         fetchCandidates();
       }
     }
@@ -66,7 +66,7 @@ export function SwipeDeck() {
     }
   }, { filterTaps: true });
 
-  if (isLoading && !candidates.length) {
+  if (isFetching && !candidates.length) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4 text-brand-400">
         <div className="h-12 w-12 border-4 border-brand-300 border-t-brand-600 rounded-full animate-spin" />
@@ -75,7 +75,7 @@ export function SwipeDeck() {
     );
   }
 
-  if (!candidates.length) {
+  if (!hasMore && !candidates.length) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-3 text-center px-8">
         <span className="text-5xl">🎮</span>
