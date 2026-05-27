@@ -11,8 +11,10 @@ interface MatchEvent {
 }
 
 interface MatchedUser {
+  id: string;
   username: string;
   avatar: string;
+  avatarSeed?: string;
 }
 
 export function MatchModal() {

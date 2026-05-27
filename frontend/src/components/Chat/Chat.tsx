@@ -8,7 +8,7 @@ import { Send } from 'lucide-react';
 
 interface Props {
   roomId: string;
-  otherUser: { username: string; avatar: string };
+  otherUser: { id?: string; username: string; avatar: string; avatarSeed?: string };
 }
 
 export function Chat({ roomId, otherUser }: Props) {
@@ -90,7 +90,7 @@ export function Chat({ roomId, otherUser }: Props) {
 
         {isTyping && (
           <div className="flex items-center gap-2">
-            <AvatarDisplay seed={otherUser.username} size={28} className="rounded-full overflow-hidden flex-shrink-0" />
+            <AvatarDisplay seed={otherUser.avatarSeed ?? otherUser.id ?? otherUser.username} size={28} className="rounded-full overflow-hidden flex-shrink-0" />
             <div className="px-4 py-2.5 bg-gray-100 rounded-2xl rounded-bl-sm flex gap-1">
               {[0, 1, 2].map((i) => (
                 <span key={i} className="h-2 w-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: `${i * 150}ms` }} />
