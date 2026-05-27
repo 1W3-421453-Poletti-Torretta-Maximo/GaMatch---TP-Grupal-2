@@ -42,6 +42,14 @@ export function SwipeCard({ candidate, style, onLike, onDislike, isTop }: Props)
           {candidate.games.slice(0, 3).map((g, i) => (
             <GameBadge key={i} game={g} size="sm" />
           ))}
+          {/* Timeslot icons per game */}
+          {candidate.games.slice(0, 3).map((g, i) =>
+            g.timeSlots && g.timeSlots.length > 0 ? (
+              <span key={`ts-${i}`} className="text-xs">
+                {g.timeSlots.map((sid) => ({ morning: '🌅', afternoon: '☀️', night: '🌙' })[sid] ?? '').join(' ')}
+              </span>
+            ) : null
+          )}
         </div>
 
         {/* Action buttons — only on top card */}

@@ -11,7 +11,8 @@ interface Props {
 export function LobbyChat({ lobbyId }: Props) {
   const [input, setInput] = useState('');
   const bottomRef = useRef<HTMLDivElement>(null);
-  const { messages, fetchMessages, sendMessage, addMessage, joinLobby, leaveLobby } = useLobbyStore();
+  const typingTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { messages, typingUsers, fetchMessages, sendMessage, addMessage, joinLobby, leaveLobby, setTypingUsers } = useLobbyStore();
   const { user } = useAuthStore();
 
   useEffect(() => {
@@ -22,15 +23,26 @@ export function LobbyChat({ lobbyId }: Props) {
     const handler = (msg: any) => addMessage(msg);
     socket.on('new_lobby_message', handler);
 
+    const typingHandler = (data: { userId: string }) => {
+      if (data.userId !== user?.id) {
+        setTypingUsers([data.userId]);
+        clearTimeout(typingTimeout.current!);
+        typingTimeout.current = setTimeout(() => setTypingUsers([]), 2000);
+      }
+    };
+    socket.on('lobby_user_typing', typingHandler);
+
     return () => {
       leaveLobby(lobbyId);
       socket.off('new_lobby_message', handler);
+      socket.off('lobby_user_typing', typingHandler);
+      if (typingTimeout.current) clearTimeout(typingTimeout.current);
     };
   }, [lobbyId]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, typingUsers]);
 
   const send = () => {
     if (!input.trim() || !user) return;
@@ -40,6 +52,11 @@ export function LobbyChat({ lobbyId }: Props) {
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInput(e.target.value);
+    getSocket().emit('lobby_typing', lobbyId);
   };
 
   return (
@@ -63,13 +80,20 @@ export function LobbyChat({ lobbyId }: Props) {
             </div>
           );
         })}
+        {typingUsers.length > 0 && (
+          <div className="flex items-end gap-2">
+            <div className="bg-gray-100 text-gray-500 text-xs px-4 py-2.5 rounded-2xl rounded-bl-sm italic">
+              Alguien está escribiendo...
+            </div>
+          </div>
+        )}
         <div ref={bottomRef} />
       </div>
 
       <div className="px-4 py-3 border-t border-gray-100 flex gap-2 items-center bg-white sticky bottom-0">
         <input
           value={input}
-          onChange={(e) => setInput(e.target.value)}
+          onChange={handleInputChange}
           onKeyDown={handleKeyDown}
           placeholder="Escribí un mensaje..."
           className="flex-1 rounded-full border border-gray-200 px-4 py-2.5 text-sm outline-none

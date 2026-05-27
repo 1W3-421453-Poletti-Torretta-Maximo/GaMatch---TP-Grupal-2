@@ -22,6 +22,18 @@ export default async function matchRoutes(app: FastifyInstance) {
     reply.send(matches);
   });
 
+  // GET /lobbies — get joined lobbies
+  app.get('/lobbies', { preHandler: requireAuth }, async (req, reply) => {
+    const { userId } = (req as typeof req & AuthRequest).user;
+    const session = getSession();
+    const result = await session.run(Q.GET_USER_JOINED_LOBBIES, { userId });
+    await session.close();
+    reply.send(result.records.map((r) => ({
+      ...r.get('l').properties,
+      gameName: r.get('gameName'),
+    })));
+  });
+
   app.delete('/:roomId', { preHandler: requireAuth }, async (req, reply) => {
     const { userId } = (req as typeof req & AuthRequest).user;
     const { roomId } = req.params as { roomId: string };

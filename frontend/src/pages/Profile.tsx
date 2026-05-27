@@ -13,7 +13,7 @@ export default function Profile() {
   const [avatarSeed, setAvatarSeedLocal] = useState(user?.avatarSeed ?? '');
   const [saving, setSaving] = useState(false);
   const [addingGame, setAddingGame] = useState(false);
-  const [form, setForm] = useState({ gameId: '', role: '', rankId: '', rankTier: 0, isLookingNow: false });
+  const [form, setForm] = useState({ gameId: '', role: '', rankId: '', rankTier: 0, isLookingNow: false, timeSlots: [] as string[] });
   const [timeslots, setTimeslots] = useState<TimeSlot[]>([]);
   const selectedSlots = useAuthStore((s) => s.timeSlots);
   const setTimeSlots = useAuthStore((s) => s.setTimeSlots);
@@ -43,7 +43,7 @@ export default function Profile() {
     await api.put('/users/me/games', form);
     await refreshProfile();
     setAddingGame(false);
-    setForm({ gameId: '', role: '', rankId: '', rankTier: 0, isLookingNow: false });
+    setForm({ gameId: '', role: '', rankId: '', rankTier: 0, isLookingNow: false, timeSlots: [] });
   };
 
   const selectedGame = catalog.find((g) => g.id === form.gameId);
@@ -167,7 +167,7 @@ export default function Profile() {
           <div className="border-t border-gray-100 pt-3 space-y-2">
             <select
               value={form.gameId}
-              onChange={(e) => setForm({ ...form, gameId: e.target.value, role: '', rankId: '', rankTier: 0 })}
+              onChange={(e) => setForm({ ...form, gameId: e.target.value, role: '', rankId: '', rankTier: 0, timeSlots: [] })}
               className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2 outline-none focus:border-brand-400 transition"
             >
               <option value="">Seleccioná un juego</option>
@@ -208,12 +208,48 @@ export default function Profile() {
                   />
                   Estoy buscando partida ahora
                 </label>
+
+                {/* TimeSlots per game */}
+                {timeslots.length > 0 && (
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-2">
+                      Horarios para este juego
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {timeslots.map((ts) => {
+                        const active = form.timeSlots.includes(ts.id);
+                        const icons: Record<string, string> = { morning: '🌅', afternoon: '☀️', night: '🌙' };
+                        return (
+                          <button
+                            key={ts.id}
+                            type="button"
+                            onClick={() =>
+                              setForm({
+                                ...form,
+                                timeSlots: form.timeSlots.includes(ts.id)
+                                  ? form.timeSlots.filter((id) => id !== ts.id)
+                                  : [...form.timeSlots, ts.id],
+                              })
+                            }
+                            className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-medium transition border
+                              ${active
+                                ? 'bg-brand-600 text-white border-brand-600'
+                                : 'bg-white text-gray-600 border-gray-200 hover:border-brand-300'}`}
+                          >
+                            <span>{icons[ts.id] ?? ''}</span>
+                            <span>{ts.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </>
             )}
 
             <div className="flex gap-2 pt-1">
               <button
-                onClick={() => { setAddingGame(false); setForm({ gameId: '', role: '', rankId: '', rankTier: 0, isLookingNow: false }); }}
+                onClick={() => { setAddingGame(false); setForm({ gameId: '', role: '', rankId: '', rankTier: 0, isLookingNow: false, timeSlots: [] }); }}
                 className="flex-1 py-2 rounded-full border border-gray-200 text-gray-500 text-xs font-semibold hover:bg-gray-50 transition"
               >
                 Cancelar

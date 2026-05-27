@@ -87,6 +87,10 @@ export function registerSocketHandlers(io: Server): void {
       io.to('lobby:' + data.lobbyId).emit('new_lobby_message', msg);
     });
 
+    socket.on('lobby_typing', (lobbyId: string) => {
+      socket.to('lobby:' + lobbyId).emit('lobby_user_typing', { userId });
+    });
+
     socket.on('leave_lobby', (lobbyId: string) => {
       socket.leave('lobby:' + lobbyId);
     });

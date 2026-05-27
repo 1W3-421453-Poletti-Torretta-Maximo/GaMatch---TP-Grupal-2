@@ -79,15 +79,19 @@ export const Q = {
       AND (size($gameIds) = 0 OR game.id IN $gameIds)
       AND ($onlineOnly = false OR candidate.isOnline = true)
       AND ($rankTolerance = -1 OR abs(toInteger(cp.rankTier) - toInteger(mp.rankTier)) <= $rankTolerance)
+    WITH DISTINCT candidate, me, game
+    OPTIONAL MATCH (me)-[:AVAILABLE_AT {gameId: game.id}]->(myTs:TimeSlot)
+    OPTIONAL MATCH (candidate)-[:AVAILABLE_AT {gameId: game.id}]->(theirTs:TimeSlot)
+    WITH candidate, me, game,
+         [ts IN collect(DISTINCT myTs) WHERE ts IS NOT NULL | ts.id] AS mySlotIds,
+         [ts IN collect(DISTINCT theirTs) WHERE ts IS NOT NULL | ts.id] AS theirSlotIds
+    WHERE size(mySlotIds) = 0 OR any(s IN mySlotIds WHERE s IN theirSlotIds)
     WITH DISTINCT candidate, me
     OPTIONAL MATCH (candidate)-[op:PLAYS]->(og:Game)
-    OPTIONAL MATCH (me)-[:AVAILABLE_AT]->(myTs:TimeSlot)
-    WITH candidate, op, og, [ts IN collect(DISTINCT myTs) WHERE ts IS NOT NULL | ts.id] AS mySlotIds
-    OPTIONAL MATCH (candidate)-[:AVAILABLE_AT]->(theirTs:TimeSlot)
-    WITH candidate, op, og, mySlotIds, [ts IN collect(DISTINCT theirTs) WHERE ts IS NOT NULL | ts.id] AS theirSlotIds
-    WHERE size(mySlotIds) = 0 OR any(s IN mySlotIds WHERE s IN theirSlotIds)
+    OPTIONAL MATCH (candidate)-[:AVAILABLE_AT {gameId: og.id}]->(ogTs:TimeSlot)
+    WITH candidate, me, op, og, [ts IN collect(DISTINCT ogTs) WHERE ts IS NOT NULL | ts.id] AS ogSlotIds
     RETURN DISTINCT candidate,
-      [x IN collect(CASE WHEN og IS NOT NULL THEN { game: properties(og), role: op.role, rankId: op.rankId, rankTier: op.rankTier, isLookingNow: op.isLookingNow } ELSE null END) WHERE x IS NOT NULL] AS games
+      [x IN collect(CASE WHEN og IS NOT NULL THEN { game: properties(og), role: op.role, rankId: op.rankId, rankTier: op.rankTier, isLookingNow: op.isLookingNow, timeSlots: ogSlotIds } ELSE null END) WHERE x IS NOT NULL] AS games
     ORDER BY rand()
     LIMIT $limit
   `,
@@ -122,10 +126,13 @@ export const Q = {
   GET_USER_MATCHES: `
     MATCH (me:User {id: $myId})-[m:MATCHED_WITH]->(other:User)
     OPTIONAL MATCH (other)-[op:PLAYS]->(og:Game)
+    OPTIONAL MATCH (other)-[:AVAILABLE_AT {gameId: og.id}]->(ogTs:TimeSlot)
+    WITH other, m, og, op, [ts IN collect(DISTINCT ogTs) WHERE ts IS NOT NULL | ts.id] AS ogSlotIds
+    WITH other, m, collect(CASE WHEN og IS NOT NULL THEN { game: properties(og), role: op.role, rankId: op.rankId, timeSlots: ogSlotIds } ELSE null END) AS games
     RETURN other,
            m.roomId AS roomId,
            m.matchedAt AS matchedAt,
-           collect({ game: properties(og), role: op.role, rankId: op.rankId }) AS games
+           [x IN games WHERE x IS NOT NULL] AS games
     ORDER BY m.matchedAt DESC
   `,
 
@@ -221,6 +228,22 @@ export const Q = {
     MATCH (ts:TimeSlot {id: slotId})
     CREATE (u)-[:AVAILABLE_AT]->(ts)
   `,
+
+  GET_USER_GAME_TIMESLOTS: `
+    MATCH (u:User {id: $userId})-[:AVAILABLE_AT {gameId: $gameId}]->(ts:TimeSlot)
+    RETURN ts
+    ORDER BY ts.startHour
+  `,
+
+  UPDATE_USER_GAME_TIMESLOTS: `
+    MATCH (u:User {id: $userId})
+    OPTIONAL MATCH (u)-[r:AVAILABLE_AT {gameId: $gameId}]->(:TimeSlot)
+    DELETE r
+    WITH u
+    UNWIND $timeSlotIds AS slotId
+    MATCH (ts:TimeSlot {id: slotId})
+    CREATE (u)-[:AVAILABLE_AT {gameId: $gameId}]->(ts)
+  `,
   // ── Admin ──────────────────────────────────────────────────────────────────
 
   ADMIN_CHECK_ROLE: `
@@ -256,8 +279,19 @@ export const Q = {
 
   GET_LOBBIES: `
     MATCH (l:Lobby)-[:FOR_GAME]->(g:Game {id: $gameId})
+    RETURN DISTINCT l, g.name AS gameName
+    ORDER BY l.createdAt DESC
+  `,
+
+  GET_USER_JOINED_LOBBIES: `
+    MATCH (me:User {id: $userId})-[:JOINED]->(l:Lobby)-[:FOR_GAME]->(g:Game)
     RETURN l, g.name AS gameName
     ORDER BY l.createdAt DESC
+  `,
+
+  JOIN_LOBBY: `
+    MATCH (u:User {id: $userId}), (l:Lobby {id: $lobbyId})
+    MERGE (u)-[:JOINED]->(l)
   `,
 
   CREATE_LOBBY: `

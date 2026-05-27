@@ -67,12 +67,16 @@ export default async function userRoutes(app: FastifyInstance) {
       rankId:       z.string(),
       rankTier:     z.number().int().min(0),
       isLookingNow: z.boolean().default(false),
+      timeSlots:    z.array(z.string()).optional(),
     });
     const parsed = schema.safeParse(req.body);
     if (!parsed.success) return reply.code(400).send({ error: parsed.error.issues });
 
     const session = getSession();
     await session.run(Q.UPSERT_USER_GAME, { userId, ...parsed.data });
+    if (parsed.data.timeSlots !== undefined) {
+      await session.run(Q.UPDATE_USER_GAME_TIMESLOTS, { userId, gameId: parsed.data.gameId, timeSlotIds: parsed.data.timeSlots });
+    }
     await session.close();
     reply.code(200).send({ ok: true });
   });

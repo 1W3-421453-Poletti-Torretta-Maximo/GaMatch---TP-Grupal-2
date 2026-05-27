@@ -30,6 +30,7 @@ export interface UserGame {
   rankId: string;
   rankTier: number;
   isLookingNow: boolean;
+  timeSlots?: string[];
 }
 
 export interface User {

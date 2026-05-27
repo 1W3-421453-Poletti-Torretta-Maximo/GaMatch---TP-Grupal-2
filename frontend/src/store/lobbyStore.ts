@@ -7,6 +7,7 @@ interface LobbyState {
   lobbies: Lobby[];
   activeLobbyId: string | null;
   messages: LobbyMessage[];
+  typingUsers: string[];
   isLoading: boolean;
   fetchLobbies: (gameId: string) => Promise<void>;
   createLobby: (name: string, gameId: string, rankTier?: string) => Promise<Lobby | null>;
@@ -15,12 +16,14 @@ interface LobbyState {
   sendMessage: (lobbyId: string, content: string, senderName: string) => void;
   fetchMessages: (lobbyId: string) => Promise<void>;
   addMessage: (msg: LobbyMessage) => void;
+  setTypingUsers: (users: string[]) => void;
 }
 
 export const useLobbyStore = create<LobbyState>((set, get) => ({
   lobbies: [],
   activeLobbyId: null,
   messages: [],
+  typingUsers: [],
   isLoading: false,
 
   fetchLobbies: async (gameId: string) => {
@@ -43,14 +46,15 @@ export const useLobbyStore = create<LobbyState>((set, get) => ({
     }
   },
 
-  joinLobby: (lobbyId: string) => {
+  joinLobby: async (lobbyId: string) => {
     set({ activeLobbyId: lobbyId });
     getSocket().emit('join_lobby', lobbyId);
+    try { await api.post(`/lobbies/${lobbyId}/join`); } catch { /* ignore */ }
   },
 
   leaveLobby: (lobbyId: string) => {
     getSocket().emit('leave_lobby', lobbyId);
-    set({ activeLobbyId: null, messages: [] });
+    set({ activeLobbyId: null, messages: [], typingUsers: [] });
   },
 
   sendMessage: (lobbyId: string, content: string, senderName: string) => {
@@ -63,6 +67,10 @@ export const useLobbyStore = create<LobbyState>((set, get) => ({
   },
 
   addMessage: (msg: LobbyMessage) => {
-    set((s) => ({ messages: [...s.messages, msg] }));
+    set((s) => ({ messages: [...s.messages, msg], typingUsers: s.typingUsers.filter((id) => id !== msg.senderId) }));
+  },
+
+  setTypingUsers: (users: string[]) => {
+    set({ typingUsers: users });
   },
 }));
