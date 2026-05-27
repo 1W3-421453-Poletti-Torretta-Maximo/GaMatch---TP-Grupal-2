@@ -32,12 +32,12 @@ export function registerSocketHandlers(io: Server): void {
     const session = getSession();
     session.run(Q.SET_USER_ONLINE, { id: userId, isOnline: true }).finally(() => session.close());
 
-    // Join a chat room
+    // Join a 1-1 chat room
     socket.on('join_room', (roomId: string) => {
       socket.join(roomId);
     });
 
-    // Send message
+    // Send 1-1 message
     socket.on('send_message', async (data: { roomId: string; content: string }) => {
       if (!data.roomId || !data.content?.trim()) return;
 
@@ -62,6 +62,36 @@ export function registerSocketHandlers(io: Server): void {
     socket.on('typing', (roomId: string) => {
       socket.to(roomId).emit('user_typing', { userId });
     });
+
+    // ── Lobby events ────────────────────────────────────────────────────────
+
+    socket.on('join_lobby', (lobbyId: string) => {
+      socket.join('lobby:' + lobbyId);
+    });
+
+    socket.on('lobby_message', async (data: { lobbyId: string; content: string; senderName: string }) => {
+      if (!data.lobbyId || !data.content?.trim()) return;
+
+      const messageId = uuidv4();
+      const session = getSession();
+      const result = await session.run(Q.SAVE_LOBBY_MESSAGE, {
+        id:         messageId,
+        lobbyId:    data.lobbyId,
+        content:    data.content.trim().slice(0, 1000),
+        senderId:   userId,
+        senderName: data.senderName,
+      });
+      await session.close();
+
+      const msg = result.records[0].get('msg').properties;
+      io.to('lobby:' + data.lobbyId).emit('new_lobby_message', msg);
+    });
+
+    socket.on('leave_lobby', (lobbyId: string) => {
+      socket.leave('lobby:' + lobbyId);
+    });
+
+    // ── Disconnect ──────────────────────────────────────────────────────────
 
     socket.on('disconnect', () => {
       const dissconnectSession = getSession();

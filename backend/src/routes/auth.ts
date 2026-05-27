@@ -68,6 +68,7 @@ export default async function authRoutes(app: FastifyInstance) {
       discordId: discordUser.id,
       username:  discordUser.global_name ?? discordUser.username,
       avatar,
+      avatarSeed: discordUser.id,
     });
     await session.close();
 

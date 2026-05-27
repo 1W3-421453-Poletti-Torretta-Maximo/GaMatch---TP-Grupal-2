@@ -222,6 +222,21 @@ async function seed() {
 
   console.log('Seeding games, roles and ranks...');
 
+  // Seed TimeSlots
+  const TIMESLOTS = [
+    { id: 'morning',   label: 'Mañana',  startHour: 6,  endHour: 12 },
+    { id: 'afternoon', label: 'Tarde',   startHour: 12, endHour: 20 },
+    { id: 'night',     label: 'Noche',   startHour: 20, endHour: 6  },
+  ];
+  for (const ts of TIMESLOTS) {
+    await session.run(
+      `MERGE (ts:TimeSlot {id: $id})
+       SET ts.label = $label, ts.startHour = $startHour, ts.endHour = $endHour`,
+      { id: ts.id, label: ts.label, startHour: ts.startHour, endHour: ts.endHour }
+    );
+    console.log(`  ✓ TimeSlot: ${ts.label}`);
+  }
+
   for (const game of GAMES) {
     await session.run(
       `MERGE (g:Game {id: $id})

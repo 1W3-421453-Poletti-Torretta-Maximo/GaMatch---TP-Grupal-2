@@ -11,6 +11,9 @@ import swipeRoutes from './routes/swipe.js';
 import matchRoutes from './routes/matches.js';
 import candidateRoutes from './routes/candidates.js';
 import messageRoutes from './routes/messages.js';
+import timeslotRoutes from './routes/timeslots.js';
+import lobbyRoutes from './routes/lobbies.js';
+import adminRoutes from './routes/admin.js';
 import { registerSocketHandlers } from './socket/handlers.js';
 import { initNeo4j } from './neo4j/driver.js';
 
@@ -39,6 +42,9 @@ await app.register(swipeRoutes, { prefix: '/swipe' });
 await app.register(matchRoutes, { prefix: '/matches' });
 await app.register(candidateRoutes, { prefix: '/candidates' });
 await app.register(messageRoutes, { prefix: '/messages' });
+await app.register(timeslotRoutes, { prefix: '/timeslots' });
+await app.register(lobbyRoutes, { prefix: '/lobbies' });
+await app.register(adminRoutes, { prefix: '/admin' });
 
 registerSocketHandlers(io);
 

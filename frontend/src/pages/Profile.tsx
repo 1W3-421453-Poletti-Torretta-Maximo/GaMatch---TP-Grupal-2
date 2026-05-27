@@ -1,25 +1,34 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../store/authStore';
-import type { GameWithMeta } from '../types';
+import type { GameWithMeta, TimeSlot } from '../types';
 import api from '../lib/api';
+import { AvatarDisplay } from '../components/AvatarDisplay/AvatarDisplay';
 import { GameBadge } from '../components/GameBadge/GameBadge';
-import { Plus, Trash2, LogOut } from 'lucide-react';
+import { Plus, Trash2, LogOut, Shuffle } from 'lucide-react';
 
 export default function Profile() {
   const { user, games, refreshProfile, logout } = useAuthStore();
   const [catalog, setCatalog] = useState<GameWithMeta[]>([]);
   const [bio, setBio] = useState(user?.bio ?? '');
+  const [avatarSeed, setAvatarSeedLocal] = useState(user?.avatarSeed ?? '');
   const [saving, setSaving] = useState(false);
   const [addingGame, setAddingGame] = useState(false);
   const [form, setForm] = useState({ gameId: '', role: '', rankId: '', rankTier: 0, isLookingNow: false });
+  const [timeslots, setTimeslots] = useState<TimeSlot[]>([]);
+  const selectedSlots = useAuthStore((s) => s.timeSlots);
+  const setTimeSlots = useAuthStore((s) => s.setTimeSlots);
 
   useEffect(() => {
     api.get<GameWithMeta[]>('/games').then(({ data }) => setCatalog(data));
+    api.get<TimeSlot[]>('/timeslots').then(({ data }) => setTimeslots(data));
   }, []);
 
   const saveBio = async () => {
     setSaving(true);
-    await api.patch('/users/me', { bio });
+    const body: Record<string, unknown> = { bio };
+    if (avatarSeed) body.avatarSeed = avatarSeed;
+    body.timeSlots = selectedSlots;
+    await api.patch('/users/me', body);
     await refreshProfile();
     setSaving(false);
   };
@@ -45,7 +54,20 @@ export default function Profile() {
     <main className="flex-1 pb-20 pt-6 px-4 max-w-md mx-auto w-full">
       {/* Header */}
       <div className="flex flex-col items-center mb-6">
-        <img src={user.avatar} className="h-20 w-20 rounded-full object-cover border-4 border-brand-300 mb-3" alt="" />
+        <div className="relative mb-3">
+          <AvatarDisplay seed={avatarSeed || user.id} size={80} className="rounded-full border-4 border-brand-300 overflow-hidden" />
+          <button
+            onClick={() => {
+              const newSeed = Math.random().toString(36).substring(2, 10);
+              setAvatarSeedLocal(newSeed);
+              useAuthStore.getState().setAvatarSeed(newSeed);
+            }}
+            className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-brand-600 text-white flex items-center justify-center hover:bg-brand-700 transition shadow-md"
+            title="Regenerar avatar"
+          >
+            <Shuffle size={14} />
+          </button>
+        </div>
         <h2 className="text-xl font-bold text-gray-800">{user.username}</h2>
       </div>
 
@@ -71,6 +93,45 @@ export default function Profile() {
           </button>
         </div>
       </section>
+
+      {/* TimeSlots */}
+      {timeslots.length > 0 && (
+        <section className="bg-white rounded-2xl p-4 border border-gray-100 mb-4">
+          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-3">
+            Disponibilidad horaria
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {timeslots.map((ts) => {
+              const active = selectedSlots.includes(ts.id);
+              const icons: Record<string, string> = { morning: '🌅', afternoon: '☀️', night: '🌙' };
+              return (
+                <button
+                  key={ts.id}
+                  onClick={() =>
+                    setTimeSlots(
+                      selectedSlots.includes(ts.id)
+                        ? selectedSlots.filter((id) => id !== ts.id)
+                        : [...selectedSlots, ts.id]
+                    )
+                  }
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition border
+                    ${active
+                      ? 'bg-brand-600 text-white border-brand-600'
+                      : 'bg-white text-gray-600 border-gray-200 hover:border-brand-300'}`}
+                >
+                  <span>{icons[ts.id] ?? ''}</span>
+                  <span>{ts.label}</span>
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-xs text-gray-400 mt-2">
+            {selectedSlots.length === 0
+              ? 'Seleccioná tus horarios habituales de juego'
+              : `${selectedSlots.length} franja(s) seleccionada(s)`}
+          </p>
+        </section>
+      )}
 
       {/* Games */}
       <section className="bg-white rounded-2xl p-4 border border-gray-100 mb-4">

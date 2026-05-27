@@ -37,6 +37,8 @@ export interface User {
   discordId: string;
   username: string;
   avatar: string;
+  avatarSeed?: string;
+  role?: string;
   bio: string;
   isOnline: boolean;
   lastSeen: string;
@@ -62,6 +64,30 @@ export interface Message {
   senderId: string;
   senderUsername: string;
   senderAvatar: string;
+}
+
+export interface TimeSlot {
+  id: string;
+  label: string;
+  startHour: number;
+  endHour: number;
+}
+
+export interface Lobby {
+  id: string;
+  name: string;
+  gameId: string;
+  rankTier: string;
+  createdAt: string;
+  gameName?: string;
+}
+
+export interface LobbyMessage {
+  id: string;
+  content: string;
+  senderId: string;
+  senderName: string;
+  createdAt: string;
 }
 
 export interface SwipeFilters {

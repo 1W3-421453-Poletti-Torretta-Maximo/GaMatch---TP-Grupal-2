@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { AvatarDisplay } from '../AvatarDisplay/AvatarDisplay';
 import { getSocket } from '../../lib/socket';
 import { useAuthStore } from '../../store/authStore';
 import api from '../../lib/api';
@@ -42,16 +43,8 @@ export function MatchModal() {
         </p>
 
         <div className="flex justify-center gap-4 mb-6">
-          <img
-            src={user.avatar}
-            alt={user.username}
-            className="h-20 w-20 rounded-full border-4 border-brand-400 object-cover"
-          />
-          <img
-            src={matchData.other.avatar}
-            alt={matchData.other.username}
-            className="h-20 w-20 rounded-full border-4 border-brand-400 object-cover"
-          />
+          <AvatarDisplay seed={user.avatarSeed ?? user.id} size={80} className="rounded-full border-4 border-brand-400 overflow-hidden" />
+          <AvatarDisplay seed={matchData.other.avatarSeed ?? matchData.other.id} size={80} className="rounded-full border-4 border-brand-400 overflow-hidden" />
         </div>
 
         <button

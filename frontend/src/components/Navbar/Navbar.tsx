@@ -1,10 +1,11 @@
 import { NavLink } from 'react-router-dom';
-import { Home, MessageSquare, User, SlidersHorizontal } from 'lucide-react';
+import { Home, MessageSquare, User, SlidersHorizontal, Gamepad2 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 
 const links = [
   { to: '/',        icon: Home,              label: 'Explorar'  },
   { to: '/matches', icon: MessageSquare,     label: 'Matches'   },
+  { to: '/lobbies', icon: Gamepad2,          label: 'Lobbies'   },
   { to: '/profile', icon: User,              label: 'Perfil'    },
   { to: '/settings',icon: SlidersHorizontal, label: 'Filtros'   },
 ];

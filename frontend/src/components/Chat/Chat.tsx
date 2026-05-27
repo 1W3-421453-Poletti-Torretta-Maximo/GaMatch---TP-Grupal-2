@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { Message } from '../../types';
 import { getSocket } from '../../lib/socket';
 import api from '../../lib/api';
+import { AvatarDisplay } from '../AvatarDisplay/AvatarDisplay';
 import { useAuthStore } from '../../store/authStore';
 import { Send } from 'lucide-react';
 
@@ -72,8 +73,8 @@ export function Chat({ roomId, otherUser }: Props) {
           const isMe = msg.senderId === user?.id;
           return (
             <div key={msg.id} className={`flex items-end gap-2 ${isMe ? 'flex-row-reverse' : ''}`}>
-              {!isMe && (
-                <img src={msg.senderAvatar} className="h-7 w-7 rounded-full object-cover flex-shrink-0" alt="" />
+                {!isMe && (
+                <AvatarDisplay seed={msg.senderId} size={28} className="rounded-full overflow-hidden flex-shrink-0" />
               )}
               <div
                 className={`max-w-[72%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed
@@ -89,7 +90,7 @@ export function Chat({ roomId, otherUser }: Props) {
 
         {isTyping && (
           <div className="flex items-center gap-2">
-            <img src={otherUser.avatar} className="h-7 w-7 rounded-full object-cover" alt="" />
+            <AvatarDisplay seed={otherUser.username} size={28} className="rounded-full overflow-hidden flex-shrink-0" />
             <div className="px-4 py-2.5 bg-gray-100 rounded-2xl rounded-bl-sm flex gap-1">
               {[0, 1, 2].map((i) => (
                 <span key={i} className="h-2 w-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: `${i * 150}ms` }} />

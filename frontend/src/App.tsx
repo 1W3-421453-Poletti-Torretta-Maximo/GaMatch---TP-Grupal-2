@@ -9,6 +9,9 @@ import Matches from './pages/Matches';
 import Profile from './pages/Profile';
 import Settings from './pages/Settings';
 import ChatRoom from './pages/ChatRoom';
+import Lobbies from './pages/Lobbies';
+import LobbyChatRoom from './pages/LobbyChatRoom';
+import AdminDashboard from './pages/AdminDashboard';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuthStore();
@@ -37,6 +40,9 @@ export default function App() {
           <Route path="/chat/:roomId" element={<PrivateRoute><ChatRoom /></PrivateRoute>} />
           <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
           <Route path="/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />
+          <Route path="/lobbies" element={<PrivateRoute><Lobbies /></PrivateRoute>} />
+          <Route path="/lobby/:lobbyId" element={<PrivateRoute><LobbyChatRoom /></PrivateRoute>} />
+          <Route path="/admin" element={<PrivateRoute><AdminDashboard /></PrivateRoute>} />
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

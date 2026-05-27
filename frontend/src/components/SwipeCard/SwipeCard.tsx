@@ -1,4 +1,5 @@
 import type { Candidate } from '../../types';
+import { AvatarDisplay } from '../AvatarDisplay/AvatarDisplay';
 import { GameBadge } from '../GameBadge/GameBadge';
 
 interface Props {
@@ -16,11 +17,9 @@ export function SwipeCard({ candidate, style, onLike, onDislike, isTop }: Props)
       style={style}
     >
       {/* Background avatar */}
-      <img
-        src={candidate.avatar}
-        alt={candidate.username}
-        className="absolute inset-0 w-full h-full object-cover"
-      />
+      <div className="absolute inset-0 w-full h-full overflow-hidden">
+        <AvatarDisplay seed={candidate.avatarSeed ?? candidate.id} responsive className="w-full h-full" />
+      </div>
 
       {/* Gradient overlay */}
       <div className="absolute inset-0 bg-card-gradient" />

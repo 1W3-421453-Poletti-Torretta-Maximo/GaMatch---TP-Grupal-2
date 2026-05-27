@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Match } from '../types';
 import api from '../lib/api';
+import { AvatarDisplay } from '../components/AvatarDisplay/AvatarDisplay';
 import { GameBadge } from '../components/GameBadge/GameBadge';
 
 export default function Matches() {
@@ -66,7 +67,7 @@ export default function Matches() {
                 hover:border-brand-200 hover:shadow-card cursor-pointer transition"
             >
               <div className="relative flex-shrink-0">
-                <img src={m.user.avatar} alt={m.user.username} className="h-14 w-14 rounded-full object-cover" />
+                <AvatarDisplay seed={m.user.avatarSeed ?? m.user.id} size={56} className="rounded-full overflow-hidden" />
                 {m.user.isOnline && (
                   <span className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full bg-green-400 border-2 border-white" />
                 )}

@@ -22,17 +22,40 @@ export default async function userRoutes(app: FastifyInstance) {
     });
   });
 
-  // PATCH /users/me — update bio
+  // PATCH /users/me — update bio, avatarSeed, and/or timeSlots
   app.patch('/me', { preHandler: requireAuth }, async (req, reply) => {
     const { userId } = (req as typeof req & AuthRequest).user;
-    const schema = z.object({ bio: z.string().max(300) });
+    const schema = z.object({
+      bio: z.string().max(300),
+      avatarSeed: z.string().optional(),
+      timeSlots: z.array(z.string()).optional(),
+    });
     const parsed = schema.safeParse(req.body);
     if (!parsed.success) return reply.code(400).send({ error: parsed.error.issues });
 
     const session = getSession();
-    const result = await session.run(Q.UPDATE_USER_BIO, { id: userId, bio: parsed.data.bio });
+    const hasAvatarSeed = parsed.data.avatarSeed !== undefined;
+    const result = hasAvatarSeed
+      ? await session.run(Q.UPDATE_USER_PROFILE, {
+          id: userId, bio: parsed.data.bio, avatarSeed: parsed.data.avatarSeed,
+        })
+      : await session.run(Q.UPDATE_USER_BIO, { id: userId, bio: parsed.data.bio });
+
+    if (parsed.data.timeSlots !== undefined) {
+      await session.run(Q.UPDATE_USER_TIMESLOTS, { userId, timeSlotIds: parsed.data.timeSlots });
+    }
+
     await session.close();
     reply.send(result.records[0].get('u').properties);
+  });
+
+  // GET /users/me/timeslots — get current user's selected timeslots
+  app.get('/me/timeslots', { preHandler: requireAuth }, async (req, reply) => {
+    const { userId } = (req as typeof req & AuthRequest).user;
+    const session = getSession();
+    const result = await session.run(Q.GET_USER_TIMESLOTS, { userId });
+    await session.close();
+    reply.send(result.records.map((r) => r.get('ts').properties));
   });
 
   // PUT /users/me/games — add or update a game in profile
