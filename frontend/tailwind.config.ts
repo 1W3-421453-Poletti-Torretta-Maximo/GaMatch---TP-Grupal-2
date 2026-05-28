@@ -30,7 +30,7 @@ export default {
       },
       backgroundImage: {
         'brand-gradient': 'linear-gradient(135deg, #7c3aed 0%, #9970ff 100%)',
-        'card-gradient':  'linear-gradient(180deg, transparent 0%, transparent 55%, rgba(70,70,70,0.7) 70%, rgb(50,50,50) 100%)',
+        'card-gradient':  'linear-gradient(180deg, transparent 0%, transparent 55%, rgba(25,25,25,0.8) 70%, rgb(20,20,20) 100%)',
       },
       keyframes: {
         'slide-up': {
