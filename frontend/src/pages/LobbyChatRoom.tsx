@@ -16,7 +16,7 @@ export default function LobbyChatRoom() {
     if (!lobbyId) return;
     try { await api.delete(`/lobbies/${lobbyId}/join`); } catch {}
     leaveLobby(lobbyId);
-    navigate('/matches');
+    navigate('/lobbies');
   };
 
   useEffect(() => {
