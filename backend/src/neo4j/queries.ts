@@ -306,20 +306,16 @@ export const Q = {
     WITH count(u) AS totalUsers
     OPTIONAL MATCH ()-[m:MATCHED_WITH]->()
     WITH totalUsers, count(m) / 2 AS totalMatches
-    OPTIONAL MATCH ()-[p:PLAYS]->(g:Game)
-    WITH totalUsers, totalMatches, g, count(p) AS pc
-    ORDER BY pc DESC
-    WITH totalUsers, totalMatches,
-         [x IN collect(CASE WHEN g IS NOT NULL THEN {name: g.name, count: pc} ELSE null END) WHERE x IS NOT NULL][..5] AS topGames
-    OPTIONAL MATCH (uu:User)-[mw:MATCHED_WITH]->()
-    WITH totalUsers, totalMatches, topGames, uu, count(mw) AS mc
-    ORDER BY mc DESC
-    WITH totalUsers, totalMatches, topGames,
-         [x IN collect(CASE WHEN uu IS NOT NULL THEN {username: uu.username, count: mc} ELSE null END) WHERE x IS NOT NULL][..5] AS topUsers
     OPTIONAL MATCH ()-[r:RATED]->()
-    RETURN totalUsers, totalMatches, topGames, topUsers,
-           toFloat(avg(r.stars)) AS avgRating,
-           count(r) AS totalRatings
+    WITH totalUsers, totalMatches,
+         toFloat(avg(r.stars)) AS avgRating,
+         count(r) AS totalRatings
+    OPTIONAL MATCH ()-[p:PLAYS]->(g:Game)
+    WITH totalUsers, totalMatches, avgRating, totalRatings, g, count(p) AS pc
+    ORDER BY pc DESC
+    WITH totalUsers, totalMatches, avgRating, totalRatings,
+         [x IN collect(CASE WHEN g IS NOT NULL THEN {name: g.name, count: pc} ELSE null END) WHERE x IS NOT NULL][..5] AS topGames
+    RETURN totalUsers, totalMatches, avgRating, totalRatings, topGames
   `,
 
   // ── Lobbies ────────────────────────────────────────────────────────────────
