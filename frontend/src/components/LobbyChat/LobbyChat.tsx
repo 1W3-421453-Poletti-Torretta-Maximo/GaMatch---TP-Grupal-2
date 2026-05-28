@@ -82,8 +82,14 @@ export function LobbyChat({ lobbyId }: Props) {
         })}
         {typingUsers.length > 0 && (
           <div className="flex items-end gap-2">
-            <div className="bg-gray-100 text-gray-500 text-xs px-4 py-2.5 rounded-2xl rounded-bl-sm italic">
-              Alguien está escribiendo...
+            <div className="px-4 py-2.5 bg-gray-100 rounded-2xl rounded-bl-sm flex gap-1">
+              {[0, 1, 2].map((i) => (
+                <span
+                  key={i}
+                  className="h-2 w-2 rounded-full bg-gray-400 animate-bounce"
+                  style={{ animationDelay: `${i * 150}ms` }}
+                />
+              ))}
             </div>
           </div>
         )}

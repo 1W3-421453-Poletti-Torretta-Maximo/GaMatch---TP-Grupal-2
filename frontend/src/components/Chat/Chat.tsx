@@ -24,10 +24,6 @@ export function Chat({ roomId, otherUser }: Props) {
     const socket = getSocket();
     socket.emit('join_room', roomId);
 
-    // Remove any previously attached listeners to prevent duplicates
-    socket.removeAllListeners('new_message');
-    socket.removeAllListeners('user_typing');
-
     const handleNewMessage = (msg: Message) => {
       setMessages((prev) => [...prev, msg]);
     };

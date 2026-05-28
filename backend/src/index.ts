@@ -17,6 +17,14 @@ import adminRoutes from './routes/admin.js';
 import { registerSocketHandlers } from './socket/handlers.js';
 import { initNeo4j } from './neo4j/driver.js';
 
+if (!process.env.JWT_SECRET) {
+  if (process.env.NODE_ENV === 'production') {
+    console.error('FATAL: JWT_SECRET env var must be set in production');
+    process.exit(1);
+  }
+  console.warn('[auth] JWT_SECRET not set — using insecure dev default');
+}
+
 const app = Fastify({ logger: true });
 
 // app.server es el http.Server interno de Fastify — Socket.io se adjunta directamente

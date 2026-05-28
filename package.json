@@ -13,8 +13,5 @@
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
-  },
-  "dependencies": {
-    "undici-types": "^6.21.0"
   }
 }

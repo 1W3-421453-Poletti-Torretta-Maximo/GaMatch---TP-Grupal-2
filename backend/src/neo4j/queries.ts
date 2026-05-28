@@ -15,6 +15,7 @@ export const Q = {
                   u.updatedAt = datetime()
     ON MATCH SET  u.username  = $username,
                   u.avatar    = $avatar,
+                  u.avatarSeed = coalesce(u.avatarSeed, $avatarSeed),
                   u.updatedAt = datetime()
     RETURN u
   `,
@@ -23,8 +24,11 @@ export const Q = {
     MATCH (u:User {id: $id})
     OPTIONAL MATCH (u)-[p:PLAYS]->(g:Game)
     WITH u, p, g
+    OPTIONAL MATCH (u)-[r:AVAILABLE_AT]->(gts:TimeSlot)
+    WHERE g IS NOT NULL AND r.gameId = g.id
+    WITH u, p, g, [ts IN collect(DISTINCT gts) WHERE ts IS NOT NULL | ts.id] AS gameSlotIds
     RETURN u,
-      [x IN collect(CASE WHEN g IS NOT NULL THEN { game: properties(g), role: p.role, rankId: p.rankId, rankTier: p.rankTier, isLookingNow: p.isLookingNow } ELSE null END) WHERE x IS NOT NULL] AS games
+      [x IN collect(CASE WHEN g IS NOT NULL THEN { game: properties(g), role: p.role, rankId: p.rankId, rankTier: p.rankTier, isLookingNow: p.isLookingNow, timeSlots: gameSlotIds } ELSE null END) WHERE x IS NOT NULL] AS games
   `,
 
   GET_USER_BY_DISCORD: `
@@ -214,15 +218,18 @@ export const Q = {
   `,
 
   GET_USER_TIMESLOTS: `
-    MATCH (u:User {id: $userId})-[:AVAILABLE_AT]->(ts:TimeSlot)
-    RETURN ts
+    MATCH (u:User {id: $userId})-[r:AVAILABLE_AT]->(ts:TimeSlot)
+    WHERE r.gameId IS NULL
+    RETURN DISTINCT ts
     ORDER BY ts.startHour
   `,
 
   UPDATE_USER_TIMESLOTS: `
     MATCH (u:User {id: $userId})
     OPTIONAL MATCH (u)-[r:AVAILABLE_AT]->(:TimeSlot)
-    DELETE r
+    WHERE r.gameId IS NULL
+    WITH u, collect(r) AS rels
+    FOREACH (rel IN rels | DELETE rel)
     WITH u
     UNWIND $timeSlotIds AS slotId
     MATCH (ts:TimeSlot {id: slotId})
@@ -238,7 +245,8 @@ export const Q = {
   UPDATE_USER_GAME_TIMESLOTS: `
     MATCH (u:User {id: $userId})
     OPTIONAL MATCH (u)-[r:AVAILABLE_AT {gameId: $gameId}]->(:TimeSlot)
-    DELETE r
+    WITH u, collect(r) AS rels
+    FOREACH (rel IN rels | DELETE rel)
     WITH u
     UNWIND $timeSlotIds AS slotId
     MATCH (ts:TimeSlot {id: slotId})
@@ -254,16 +262,18 @@ export const Q = {
   ADMIN_STATS: `
     MATCH (u:User)
     WITH count(u) AS totalUsers
-    MATCH ()-[m:MATCHED_WITH]->()
+    OPTIONAL MATCH ()-[m:MATCHED_WITH]->()
     WITH totalUsers, count(m) / 2 AS totalMatches
-    MATCH ()-[p:PLAYS]->(g:Game)
+    OPTIONAL MATCH ()-[p:PLAYS]->(g:Game)
     WITH totalUsers, totalMatches, g, count(p) AS pc
     ORDER BY pc DESC
-    WITH totalUsers, totalMatches, collect({name: g.name, count: pc})[..5] AS topGames
-    MATCH (u:User)-[mw:MATCHED_WITH]->()
-    WITH totalUsers, totalMatches, topGames, u, count(mw) AS mc
+    WITH totalUsers, totalMatches,
+         [x IN collect(CASE WHEN g IS NOT NULL THEN {name: g.name, count: pc} ELSE null END) WHERE x IS NOT NULL][..5] AS topGames
+    OPTIONAL MATCH (uu:User)-[mw:MATCHED_WITH]->()
+    WITH totalUsers, totalMatches, topGames, uu, count(mw) AS mc
     ORDER BY mc DESC
-    WITH totalUsers, totalMatches, topGames, collect({username: u.username, count: mc})[..5] AS topUsers
+    WITH totalUsers, totalMatches, topGames,
+         [x IN collect(CASE WHEN uu IS NOT NULL THEN {username: uu.username, count: mc} ELSE null END) WHERE x IS NOT NULL][..5] AS topUsers
     OPTIONAL MATCH ()-[r:RATED]->()
     RETURN totalUsers, totalMatches, topGames, topUsers,
            toFloat(avg(r.stars)) AS avgRating,
@@ -285,7 +295,7 @@ export const Q = {
 
   GET_USER_JOINED_LOBBIES: `
     MATCH (me:User {id: $userId})-[:JOINED]->(l:Lobby)-[:FOR_GAME]->(g:Game)
-    RETURN l, g.name AS gameName
+    RETURN DISTINCT l, g.name AS gameName
     ORDER BY l.createdAt DESC
   `,
 

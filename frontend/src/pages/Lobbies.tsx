@@ -10,7 +10,7 @@ export default function Lobbies() {
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState('');
-  const { lobbies, fetchLobbies, createLobby } = useLobbyStore();
+  const { lobbies, fetchLobbies, createLobby, isCreating } = useLobbyStore();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -88,10 +88,10 @@ export default function Lobbies() {
                 </button>
                 <button
                   onClick={handleCreate}
-                  disabled={!newName.trim()}
+                  disabled={!newName.trim() || isCreating}
                   className="flex-1 py-2 rounded-full bg-brand-gradient text-white text-xs font-semibold hover:opacity-90 disabled:opacity-50 transition"
                 >
-                  Crear
+                  {isCreating ? 'Creando...' : 'Crear'}
                 </button>
               </div>
             </section>

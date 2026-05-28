@@ -167,7 +167,18 @@ export default function Profile() {
           <div className="border-t border-gray-100 pt-3 space-y-2">
             <select
               value={form.gameId}
-              onChange={(e) => setForm({ ...form, gameId: e.target.value, role: '', rankId: '', rankTier: 0, timeSlots: [] })}
+              onChange={(e) => {
+                const existing = games.find((g) => g.game.id === e.target.value);
+                setForm({
+                  ...form,
+                  gameId: e.target.value,
+                  role: existing?.role ?? '',
+                  rankId: existing?.rankId ?? '',
+                  rankTier: existing?.rankTier ?? 0,
+                  isLookingNow: existing?.isLookingNow ?? false,
+                  timeSlots: existing?.timeSlots ?? [],
+                });
+              }}
               className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2 outline-none focus:border-brand-400 transition"
             >
               <option value="">Seleccioná un juego</option>

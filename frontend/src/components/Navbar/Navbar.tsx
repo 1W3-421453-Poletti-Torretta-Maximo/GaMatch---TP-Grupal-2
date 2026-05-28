@@ -1,18 +1,19 @@
 import { NavLink } from 'react-router-dom';
-import { Home, MessageSquare, User, SlidersHorizontal, Gamepad2 } from 'lucide-react';
+import { Home, MessageSquare, User, SlidersHorizontal, Gamepad2, ShieldCheck } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
-
-const links = [
-  { to: '/',        icon: Home,              label: 'Explorar'  },
-  { to: '/matches', icon: MessageSquare,     label: 'Matches'   },
-  { to: '/lobbies', icon: Gamepad2,          label: 'Lobbies'   },
-  { to: '/profile', icon: User,              label: 'Perfil'    },
-  { to: '/settings',icon: SlidersHorizontal, label: 'Filtros'   },
-];
 
 export function Navbar() {
   const { user } = useAuthStore();
   if (!user) return null;
+
+  const links = [
+    { to: '/',        icon: Home,              label: 'Explorar'  },
+    { to: '/matches', icon: MessageSquare,     label: 'Matches'   },
+    { to: '/lobbies', icon: Gamepad2,          label: 'Lobbies'   },
+    { to: '/profile', icon: User,              label: 'Perfil'    },
+    { to: '/settings',icon: SlidersHorizontal, label: 'Filtros'   },
+    ...(user.role === 'admin' ? [{ to: '/admin', icon: ShieldCheck, label: 'Admin' }] : []),
+  ];
 
   return (
     <nav className="fixed bottom-0 inset-x-0 z-40 bg-white border-t border-gray-100 safe-area-pb">

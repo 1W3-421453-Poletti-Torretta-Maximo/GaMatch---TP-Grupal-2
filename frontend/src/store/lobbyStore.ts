@@ -9,6 +9,7 @@ interface LobbyState {
   messages: LobbyMessage[];
   typingUsers: string[];
   isLoading: boolean;
+  isCreating: boolean;
   fetchLobbies: (gameId: string) => Promise<void>;
   createLobby: (name: string, gameId: string, rankTier?: string) => Promise<Lobby | null>;
   joinLobby: (lobbyId: string) => void;
@@ -25,6 +26,7 @@ export const useLobbyStore = create<LobbyState>((set, get) => ({
   messages: [],
   typingUsers: [],
   isLoading: false,
+  isCreating: false,
 
   fetchLobbies: async (gameId: string) => {
     set({ isLoading: true });
@@ -37,11 +39,17 @@ export const useLobbyStore = create<LobbyState>((set, get) => ({
   },
 
   createLobby: async (name: string, gameId: string, rankTier = '') => {
+    if (get().isCreating) return null;
+    set({ isCreating: true });
     try {
       const { data } = await api.post<Lobby>('/lobbies', { name, gameId, rankTier });
-      set((s) => ({ lobbies: [data, ...s.lobbies] }));
+      set((s) => ({
+        lobbies: s.lobbies.some((l) => l.id === data.id) ? s.lobbies : [data, ...s.lobbies],
+        isCreating: false,
+      }));
       return data;
     } catch {
+      set({ isCreating: false });
       return null;
     }
   },
