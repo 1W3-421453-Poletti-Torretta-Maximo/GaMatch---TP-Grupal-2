@@ -90,7 +90,7 @@ export function Chat({ roomId, otherUser }: Props) {
                 <AvatarDisplay seed={msg.senderId} size={28} className="rounded-full overflow-hidden flex-shrink-0" />
               )}
               <div
-                className={`max-w-[72%] px-4 py-2 rounded-2xl text-sm leading-relaxed
+                className={`break-word max-w-[72%] px-4 py-2 rounded-2xl text-sm leading-relaxed
                   ${isMe
                     ? 'bg-brand-600 text-white rounded-br-sm'
                     : 'bg-gray-100 text-gray-800 rounded-bl-sm'}`}
