@@ -28,10 +28,10 @@ export default async function adminRoutes(app: FastifyInstance) {
           topMatchesResult,
         ] = await Promise.all([
           sessions[0].run(Q.ADMIN_STATS),
-          sessions[1].run(Q.DASHBOARD_TOP_RATED_USERS, { limit: 5 }),
-          sessions[2].run(Q.DASHBOARD_TOP_LOBBIES, { limit: 5 }),
+          sessions[1].run(Q.DASHBOARD_TOP_RATED_USERS),
+          sessions[2].run(Q.DASHBOARD_TOP_LOBBIES),
           sessions[3].run(Q.DASHBOARD_SEARCH_TIMESLOTS),
-          sessions[4].run(Q.DASHBOARD_TOP_MATCHES_USERS, { limit: 5 }),
+          sessions[4].run(Q.DASHBOARD_TOP_MATCHES_USERS),
         ]);
 
         const statsRow = statsResult.records[0];

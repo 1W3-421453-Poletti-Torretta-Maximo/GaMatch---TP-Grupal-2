@@ -473,7 +473,7 @@ export const Q = {
       ratingCount: size(ratingList)
     } AS userData
     ORDER BY avgRating DESC
-    LIMIT $limit
+    LIMIT 5
   `,
 
   DASHBOARD_TOP_LOBBIES: `
@@ -488,7 +488,7 @@ export const Q = {
       createdAt: l.createdAt
     } AS lobbyData
     ORDER BY participantCount DESC
-    LIMIT $limit
+    LIMIT 5
   `,
 
   DASHBOARD_SEARCH_TIMESLOTS: `
@@ -514,6 +514,6 @@ export const Q = {
       matchCount: matchCount
     } AS userData
     ORDER BY matchCount DESC
-    LIMIT $limit
+    LIMIT 5
   `,
 } as const;
