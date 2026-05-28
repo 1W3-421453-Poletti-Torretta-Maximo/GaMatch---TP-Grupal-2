@@ -40,10 +40,11 @@ export default function Settings() {
     if (!usePlayHoursFilter) {
       setFilters({ playHoursStart: undefined, playHoursEnd: undefined });
     } else {
-      if (filters.playHoursStart !== undefined && filters.playHoursEnd === undefined) {
-        setFilters({ playHoursEnd: userPlayHours?.endHour });
-      } else if (filters.playHoursEnd !== undefined && filters.playHoursStart === undefined) {
-        setFilters({ playHoursStart: userPlayHours?.startHour });
+      const updates: any = {};
+      if (filters.playHoursStart === undefined) updates.playHoursStart = userPlayHours?.startHour;
+      if (filters.playHoursEnd === undefined) updates.playHoursEnd = userPlayHours?.endHour;
+      if (Object.keys(updates).length > 0) {
+        setFilters(updates);
       }
     }
 
