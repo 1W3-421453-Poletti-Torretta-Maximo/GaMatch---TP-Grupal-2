@@ -66,10 +66,12 @@ export interface Match {
 export interface Message {
   id: string;
   content: string;
-  sentAt: string;
-  roomId: string;
+  sentAt?: string;
+  createdAt: string;
+  roomId?: string;
   senderId: string;
-  senderUsername: string;
+  senderUsername?: string;
+  senderName?: string;
   senderAvatar: string;
 }
 
@@ -101,6 +103,8 @@ export interface LobbyMessage {
   content: string;
   senderId: string;
   senderName: string;
+  senderUsername?: string;
+  senderAvatar?: string;
   createdAt: string;
 }
 

@@ -16,10 +16,11 @@ export default async function messageRoutes(app: FastifyInstance) {
     const messages = docs.map((d) => ({
       id: d.id,
       content: d.content,
-      sentAt: d.createdAt instanceof Date ? d.createdAt.toISOString() : d.createdAt,
+      createdAt: d.createdAt instanceof Date ? d.createdAt.toISOString() : d.createdAt,
       roomId: d.channelId,
       senderId: d.senderId,
       senderUsername: d.senderUsername,
+      senderName: d.senderName,
       senderAvatar: d.senderAvatar,
     }));
     reply.send(messages);

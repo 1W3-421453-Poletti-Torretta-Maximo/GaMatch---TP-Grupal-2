@@ -9,6 +9,26 @@ interface Props {
   lobbyId: string;
 }
 
+const formatMessageTime = (dateString: string): string => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const isToday = date.toDateString() === now.toDateString();
+  
+  if (isToday) {
+    return date.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+  }
+  
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const isYesterday = date.toDateString() === yesterday.toDateString();
+  
+  if (isYesterday) {
+    return 'Ayer ' + date.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+  }
+  
+  return date.toLocaleDateString('es-AR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+};
+
 export function LobbyChat({ lobbyId }: Props) {
   const [input, setInput] = useState('');
   const [likedUsers, setLikedUsers] = useState<Set<string>>(new Set());
@@ -96,26 +116,34 @@ export function LobbyChat({ lobbyId }: Props) {
         {messages.map((msg) => {
           const isMe = msg.senderId === user?.id;
           const alreadyLiked = likedUsers.has(msg.senderId);
+          const messageTime = msg.createdAt ? formatMessageTime(msg.createdAt) : '';
           return (
             <div key={msg.id} className={`flex items-end gap-2 ${isMe ? 'flex-row-reverse' : ''}`}>
-              <div
-                className={`max-w-[72%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed
-                  ${isMe
-                    ? 'bg-brand-600 text-white rounded-br-sm'
-                    : 'bg-gray-100 text-gray-800 rounded-bl-sm'}`}
-              >
-                {!isMe && (
-                  <button
-                    onClick={() => handleLikeUser(msg.senderId, msg.senderName)}
-                    disabled={alreadyLiked}
-                    title={alreadyLiked ? 'Ya le diste like' : 'Dar like para hacer match'}
-                    className={`text-xs font-semibold mb-0.5 block text-left transition
-                      ${alreadyLiked ? 'text-brand-500 cursor-default' : 'text-gray-500 hover:text-brand-600 cursor-pointer'}`}
-                  >
-                    {msg.senderName}{alreadyLiked ? ' 💜' : ''}
-                  </button>
+              <div className={isMe ? 'flex-col-reverse' : 'flex-col'} style={{ display: 'flex' }}>
+                <div
+                  className={`max-w-[72%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed
+                    ${isMe
+                      ? 'bg-brand-600 text-white rounded-br-sm'
+                      : 'bg-gray-100 text-gray-800 rounded-bl-sm'}`}
+                >
+                  {!isMe && (
+                    <button
+                      onClick={() => handleLikeUser(msg.senderId, msg.senderName)}
+                      disabled={alreadyLiked}
+                      title={alreadyLiked ? 'Ya le diste like' : 'Dar like para hacer match'}
+                      className={`text-xs font-semibold mb-0.5 block text-left transition
+                        ${alreadyLiked ? 'text-brand-500 cursor-default' : 'text-gray-500 hover:text-brand-600 cursor-pointer'}`}
+                    >
+                      {msg.senderName}{alreadyLiked ? ' 💜' : ''}
+                    </button>
+                  )}
+                  {msg.content}
+                </div>
+                {messageTime && (
+                  <span className={`text-xs mt-1 ${isMe ? 'text-right pr-1' : 'text-left pl-1'} ${isMe ? 'text-gray-400' : 'text-gray-500'}`}>
+                    {messageTime}
+                  </span>
                 )}
-                {msg.content}
               </div>
             </div>
           );

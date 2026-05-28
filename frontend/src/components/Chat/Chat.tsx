@@ -11,6 +11,26 @@ interface Props {
   otherUser: { id?: string; username: string; avatar: string; avatarSeed?: string };
 }
 
+const formatMessageTime = (dateString: string): string => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const isToday = date.toDateString() === now.toDateString();
+  
+  if (isToday) {
+    return date.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+  }
+  
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const isYesterday = date.toDateString() === yesterday.toDateString();
+  
+  if (isYesterday) {
+    return 'Ayer ' + date.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+  }
+  
+  return date.toLocaleDateString('es-AR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+};
+
 export function Chat({ roomId, otherUser }: Props) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -67,18 +87,26 @@ export function Chat({ roomId, otherUser }: Props) {
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 scrollbar-hide">
         {messages.map((msg) => {
           const isMe = msg.senderId === user?.id;
+          const messageTime = msg.createdAt ? formatMessageTime(msg.createdAt) : '';
           return (
             <div key={msg.id} className={`flex items-end gap-2 ${isMe ? 'flex-row-reverse' : ''}`}>
                 {!isMe && (
                 <AvatarDisplay seed={msg.senderId} size={28} className="rounded-full overflow-hidden flex-shrink-0" />
               )}
-              <div
-                className={`max-w-[72%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed
-                  ${isMe
-                    ? 'bg-brand-600 text-white rounded-br-sm'
-                    : 'bg-gray-100 text-gray-800 rounded-bl-sm'}`}
-              >
-                {msg.content}
+              <div className={isMe ? 'flex-col-reverse' : 'flex-col'} style={{ display: 'flex' }}>
+                <div
+                  className={`max-w-[72%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed
+                    ${isMe
+                      ? 'bg-brand-600 text-white rounded-br-sm'
+                      : 'bg-gray-100 text-gray-800 rounded-bl-sm'}`}
+                >
+                  {msg.content}
+                </div>
+                {messageTime && (
+                  <span className={`text-xs mt-1 ${isMe ? 'text-right pr-1' : 'text-left pl-1'} ${isMe ? 'text-gray-400' : 'text-gray-500'}`}>
+                    {messageTime}
+                  </span>
+                )}
               </div>
             </div>
           );

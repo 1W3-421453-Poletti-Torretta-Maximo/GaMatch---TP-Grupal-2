@@ -290,6 +290,17 @@ export const Q = {
     RETURN u.role AS role
   `,
 
+  GET_USER_BY_USERNAME: `
+    MATCH (u:User {username: $username})
+    RETURN u
+  `,
+
+  SET_USER_ROLE: `
+    MATCH (u:User {id: $userId})
+    SET u.role = $role
+    RETURN u
+  `,
+
   ADMIN_STATS: `
     MATCH (u:User)
     WITH count(u) AS totalUsers
@@ -448,6 +459,65 @@ export const Q = {
       CASE WHEN ph IS NOT NULL THEN { startHour: ph.startHour, endHour: ph.endHour } ELSE null END AS playHours,
       avgRating
     ORDER BY avgRating DESC, rand()
+    LIMIT $limit
+  `,
+
+  // ── Admin Dashboard Queries ────────────────────────────────────────────────
+
+  DASHBOARD_TOP_RATED_USERS: `
+    MATCH (u:User)
+    WITH u, [(reviewer)-[rate:RATED]->(u) | toFloat(rate.stars)] AS ratingList
+    WHERE size(ratingList) > 0
+    WITH u, ratingList,
+      reduce(s = 0.0, v IN ratingList | s + v) / toFloat(size(ratingList)) AS avgRating
+    RETURN {
+      username: u.username,
+      avatar: u.avatar,
+      rating: avgRating,
+      ratingCount: size(ratingList)
+    } AS userData
+    ORDER BY avgRating DESC
+    LIMIT $limit
+  `,
+
+  DASHBOARD_TOP_LOBBIES: `
+    MATCH (l:Lobby)-[:FOR_GAME]->(g:Game)
+    WITH l, g, size((u:User)-[:JOINED]->(l)) AS participantCount
+    RETURN {
+      lobbyId: l.id,
+      lobbyName: l.name,
+      gameName: g.name,
+      participantCount: participantCount,
+      createdAt: l.createdAt
+    } AS lobbyData
+    ORDER BY participantCount DESC
+    LIMIT $limit
+  `,
+
+  DASHBOARD_SEARCH_TIMESLOTS: `
+    MATCH (u:User)-[r:AVAILABLE_AT]->(ts:TimeSlot)
+    WHERE r.gameId IS NULL
+    WITH ts, count(u) AS userCount
+    RETURN {
+      slotId: ts.id,
+      slotName: ts.name,
+      startHour: ts.startHour,
+      endHour: ts.endHour,
+      userCount: userCount
+    } AS slotData
+    ORDER BY userCount DESC
+  `,
+
+  DASHBOARD_TOP_MATCHES_USERS: `
+    MATCH (u:User)
+    WITH u, size((u)-[:MATCHED_WITH]->()) AS matchCount
+    RETURN {
+      username: u.username,
+      avatar: u.avatar,
+      matchCount: matchCount
+    } AS userData
+    WHERE matchCount > 0
+    ORDER BY matchCount DESC
     LIMIT $limit
   `,
 } as const;

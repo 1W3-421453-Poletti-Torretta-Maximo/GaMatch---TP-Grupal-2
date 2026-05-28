@@ -92,9 +92,10 @@ export function registerSocketHandlers(io: Server): void {
         content: doc.content,
         senderId: doc.senderId,
         senderUsername: doc.senderUsername,
+        senderName: doc.senderName,
         senderAvatar: doc.senderAvatar,
         roomId: doc.channelId,
-        sentAt: doc.createdAt.toISOString(),
+        createdAt: doc.createdAt.toISOString(),
       });
     });
 
@@ -140,7 +141,9 @@ export function registerSocketHandlers(io: Server): void {
         id: doc.id,
         content: doc.content,
         senderId: doc.senderId,
+        senderUsername: doc.senderUsername,
         senderName: doc.senderName,
+        senderAvatar: doc.senderAvatar,
         createdAt: doc.createdAt.toISOString(),
       });
     });
