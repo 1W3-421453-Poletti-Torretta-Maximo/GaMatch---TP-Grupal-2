@@ -29,9 +29,14 @@ export const Q = {
     WITH u, p, g, [ts IN collect(DISTINCT gts) WHERE ts IS NOT NULL | ts.id] AS gameSlotIds
     WITH u, collect(CASE WHEN g IS NOT NULL THEN { game: properties(g), role: p.role, rankId: p.rankId, rankTier: p.rankTier, isLookingNow: p.isLookingNow, timeSlots: gameSlotIds } ELSE null END) AS games
     OPTIONAL MATCH (u)-[:HAS_PLAY_HOURS]->(ph:PlayHours)
+    WITH u, games, ph,
+      [(reviewer)-[rate:RATED]->(u) | toFloat(rate.stars)] AS ratingList
+    WITH u, games, ph,
+      CASE WHEN size(ratingList) = 0 THEN 0.0 ELSE reduce(s = 0.0, v IN ratingList | s + v) / toFloat(size(ratingList)) END AS avgRating
     RETURN u,
       [x IN games WHERE x IS NOT NULL] AS games,
-      ph AS playHours
+      ph AS playHours,
+      avgRating
   `,
 
   GET_USER_BY_DISCORD: `

@@ -17,12 +17,13 @@ export default async function userRoutes(app: FastifyInstance) {
 
     if (!result.records.length) return reply.code(404).send({ error: 'User not found' });
 
-    const playHoursNode = result.records[0].get('playHours');
+    const row = result.records[0];
+    const playHoursNode = row.get('playHours');
     const playHours = playHoursNode ? playHoursNode.properties : null;
 
     reply.send({
-      user: result.records[0].get('u').properties,
-      games: result.records[0].get('games'),
+      user: { ...row.get('u').properties, avgRating: row.get('avgRating') },
+      games: row.get('games'),
       playHours,
     });
   });

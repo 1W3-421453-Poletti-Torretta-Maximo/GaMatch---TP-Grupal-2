@@ -136,6 +136,14 @@ export default function Profile() {
           </button>
         </div>
         <h2 className="text-xl font-bold text-gray-800">{user.username}</h2>
+        {user.avgRating !== undefined && user.avgRating > 0 && (
+          <div className="flex items-center gap-1 mt-1">
+            {[1, 2, 3, 4, 5].map((s) => (
+              <span key={s} className={`text-sm ${s <= Math.round(user.avgRating!) ? 'text-yellow-400' : 'text-gray-300'}`}>★</span>
+            ))}
+            <span className="text-xs text-gray-400 ml-1">({user.avgRating.toFixed(1)})</span>
+          </div>
+        )}
       </div>
 
       {/* Bio */}

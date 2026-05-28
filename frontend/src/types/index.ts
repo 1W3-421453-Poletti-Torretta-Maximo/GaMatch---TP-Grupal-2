@@ -44,6 +44,7 @@ export interface User {
   isOnline: boolean;
   lastSeen: string;
   createdAt: string;
+  avgRating?: number;
 }
 
 export interface Candidate extends User {

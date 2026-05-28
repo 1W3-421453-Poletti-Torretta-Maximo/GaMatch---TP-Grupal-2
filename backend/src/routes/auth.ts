@@ -101,9 +101,10 @@ export default async function authRoutes(app: FastifyInstance) {
         return;
       }
 
-      const user = result.records[0].get('u').properties;
-      const games = result.records[0].get('games');
-      reply.send({ user, games });
+      const row = result.records[0];
+      const user = row.get('u').properties;
+      const games = row.get('games');
+      reply.send({ user: { ...user, avgRating: row.get('avgRating') }, games });
     } catch {
       reply.code(401).send({ error: 'Invalid token' });
     }
