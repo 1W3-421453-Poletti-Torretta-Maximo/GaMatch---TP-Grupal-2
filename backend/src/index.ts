@@ -16,6 +16,8 @@ import lobbyRoutes from './routes/lobbies.js';
 import adminRoutes from './routes/admin.js';
 import { registerSocketHandlers } from './socket/handlers.js';
 import { initNeo4j } from './neo4j/driver.js';
+import { connectToMongo } from './mongodb/client.js';
+import { ensureMessageIndexes } from './mongodb/messages.js';
 
 if (!process.env.JWT_SECRET) {
   if (process.env.NODE_ENV === 'production') {
@@ -59,6 +61,8 @@ registerSocketHandlers(io);
 app.get('/health', async () => ({ status: 'ok' }));
 
 await initNeo4j();
+const mongoDb = await connectToMongo();
+if (mongoDb) await ensureMessageIndexes(mongoDb);
 
 const port = Number(process.env.PORT ?? 3001);
 await app.listen({ port, host: '0.0.0.0' });

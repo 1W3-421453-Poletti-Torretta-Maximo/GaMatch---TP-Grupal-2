@@ -3,6 +3,8 @@ import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import { getSession } from '../neo4j/driver.js';
 import { Q } from '../neo4j/queries.js';
+import { getDb } from '../mongodb/client.js';
+import { saveMessage } from '../mongodb/messages.js';
 
 interface AuthSocket extends Socket {
   userId?: string;
@@ -22,7 +24,7 @@ export function registerSocketHandlers(io: Server): void {
     }
   });
 
-  io.on('connection', (socket: AuthSocket) => {
+  io.on('connection', async (socket: AuthSocket) => {
     const userId = socket.userId!;
 
     // Join personal room for match notifications
@@ -31,6 +33,23 @@ export function registerSocketHandlers(io: Server): void {
     // Mark user online in Neo4j
     const session = getSession();
     session.run(Q.SET_USER_ONLINE, { id: userId, isOnline: true }).finally(() => session.close());
+
+    // Pre-fetch sender info from Neo4j (cached in socket.data)
+    const infoSession = getSession();
+    try {
+      const infoResult = await infoSession.run(Q.GET_USER_BY_ID, { id: userId });
+      if (infoResult.records.length > 0) {
+        const u = infoResult.records[0].get('u').properties;
+        socket.data.username = u.username;
+        socket.data.avatar = u.avatar;
+      }
+    } catch { /* fallback below */ } finally {
+      await infoSession.close();
+    }
+    if (!socket.data.username) {
+      socket.data.username = 'unknown';
+      socket.data.avatar = '';
+    }
 
     // Join a 1-1 chat room
     socket.on('join_room', (roomId: string) => {
@@ -42,19 +61,28 @@ export function registerSocketHandlers(io: Server): void {
       if (!data.roomId || !data.content?.trim()) return;
 
       const messageId = uuidv4();
-      const session = getSession();
-      const result = await session.run(Q.SAVE_MESSAGE, {
-        id:       messageId,
+      const username = socket.data.username as string;
+      const doc = {
+        id: messageId,
+        content: data.content.trim().slice(0, 1000),
         senderId: userId,
-        content:  data.content.trim().slice(0, 1000),
-        roomId:   data.roomId,
-      });
-      await session.close();
+        senderUsername: username,
+        senderName: username,
+        senderAvatar: socket.data.avatar as string,
+        channelId: data.roomId,
+        channelType: 'direct' as const,
+        createdAt: new Date(),
+      };
+      await saveMessage(getDb(), doc);
 
-      const msg = result.records[0].get('msg').properties;
       io.to(data.roomId).emit('new_message', {
-        ...msg,
-        senderId: userId,
+        id: doc.id,
+        content: doc.content,
+        senderId: doc.senderId,
+        senderUsername: doc.senderUsername,
+        senderAvatar: doc.senderAvatar,
+        roomId: doc.channelId,
+        sentAt: doc.createdAt.toISOString(),
       });
     });
 
@@ -73,18 +101,26 @@ export function registerSocketHandlers(io: Server): void {
       if (!data.lobbyId || !data.content?.trim()) return;
 
       const messageId = uuidv4();
-      const session = getSession();
-      const result = await session.run(Q.SAVE_LOBBY_MESSAGE, {
-        id:         messageId,
-        lobbyId:    data.lobbyId,
-        content:    data.content.trim().slice(0, 1000),
-        senderId:   userId,
+      const doc = {
+        id: messageId,
+        content: data.content.trim().slice(0, 1000),
+        senderId: userId,
+        senderUsername: data.senderName,
         senderName: data.senderName,
-      });
-      await session.close();
+        senderAvatar: socket.data.avatar as string,
+        channelId: data.lobbyId,
+        channelType: 'lobby' as const,
+        createdAt: new Date(),
+      };
+      await saveMessage(getDb(), doc);
 
-      const msg = result.records[0].get('msg').properties;
-      io.to('lobby:' + data.lobbyId).emit('new_lobby_message', msg);
+      io.to('lobby:' + data.lobbyId).emit('new_lobby_message', {
+        id: doc.id,
+        content: doc.content,
+        senderId: doc.senderId,
+        senderName: doc.senderName,
+        createdAt: doc.createdAt.toISOString(),
+      });
     });
 
     socket.on('lobby_typing', (lobbyId: string) => {

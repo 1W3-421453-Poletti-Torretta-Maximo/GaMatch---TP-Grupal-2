@@ -181,26 +181,26 @@ export const Q = {
     RETURN $roomId AS roomId
   `,
 
-  // ── Messages ───────────────────────────────────────────────────────────────
+  // ── Messages (moved to MongoDB) ──────────────────────────────────────────
 
-  SAVE_MESSAGE: `
-    MATCH (sender:User {id: $senderId})
-    CREATE (msg:Message {
-      id:       $id,
-      content:  $content,
-      sentAt:   datetime(),
-      roomId:   $roomId
-    })
-    CREATE (sender)-[:SENT]->(msg)
-    RETURN msg
-  `,
-
-  GET_MESSAGES: `
-    MATCH (sender:User)-[:SENT]->(msg:Message {roomId: $roomId})
-    RETURN msg, sender.id AS senderId, sender.username AS senderUsername, sender.avatar AS senderAvatar
-    ORDER BY msg.sentAt ASC
-    LIMIT $limit
-  `,
+  // SAVE_MESSAGE: `
+  //   MATCH (sender:User {id: $senderId})
+  //   CREATE (msg:Message {
+  //     id:       $id,
+  //     content:  $content,
+  //     sentAt:   datetime(),
+  //     roomId:   $roomId
+  //   })
+  //   CREATE (sender)-[:SENT]->(msg)
+  //   RETURN msg
+  // `,
+  //
+  // GET_MESSAGES: `
+  //   MATCH (sender:User)-[:SENT]->(msg:Message {roomId: $roomId})
+  //   RETURN msg, sender.id AS senderId, sender.username AS senderUsername, sender.avatar AS senderAvatar
+  //   ORDER BY msg.sentAt ASC
+  //   LIMIT $limit
+  // `,
 
   // ── Ratings ─────────────────────────────────────────────────────────────────
 
@@ -348,25 +348,25 @@ export const Q = {
     RETURN l
   `,
 
-  SAVE_LOBBY_MESSAGE: `
-    MATCH (l:Lobby {id: $lobbyId})
-    CREATE (msg:LobbyMessage {
-      id: $id,
-      content: $content,
-      senderId: $senderId,
-      senderName: $senderName,
-      createdAt: datetime()
-    })
-    CREATE (l)-[:HAS_MESSAGE]->(msg)
-    RETURN msg
-  `,
-
-  GET_LOBBY_MESSAGES: `
-    MATCH (:Lobby {id: $lobbyId})-[:HAS_MESSAGE]->(msg:LobbyMessage)
-    RETURN msg
-    ORDER BY msg.createdAt ASC
-    LIMIT $limit
-  `,
+  // SAVE_LOBBY_MESSAGE: `
+  //   MATCH (l:Lobby {id: $lobbyId})
+  //   CREATE (msg:LobbyMessage {
+  //     id: $id,
+  //     content: $content,
+  //     senderId: $senderId,
+  //     senderName: $senderName,
+  //     createdAt: datetime()
+  //   })
+  //   CREATE (l)-[:HAS_MESSAGE]->(msg)
+  //   RETURN msg
+  // `,
+  //
+  // GET_LOBBY_MESSAGES: `
+  //   MATCH (:Lobby {id: $lobbyId})-[:HAS_MESSAGE]->(msg:LobbyMessage)
+  //   RETURN msg
+  //   ORDER BY msg.createdAt ASC
+  //   LIMIT $limit
+  // `,
 
   // ── PlayHours (Game play schedule) ─────────────────────────────────────────
 
