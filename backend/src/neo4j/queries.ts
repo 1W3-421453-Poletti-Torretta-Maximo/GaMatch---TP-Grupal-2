@@ -509,15 +509,15 @@ export const Q = {
   `,
 
   DASHBOARD_TOP_MATCHES_USERS: `
-    MATCH (u:User)
-    WITH u, size((u)-[:MATCHED_WITH]->()) AS matchCount
-    RETURN {
-      username: u.username,
-      avatar: u.avatar,
-      matchCount: matchCount
-    } AS userData
-    WHERE matchCount > 0
-    ORDER BY matchCount DESC
-    LIMIT $limit
-  `,
+  MATCH (u:User)
+  WITH u, size((u)-[:MATCHED_WITH]->()) AS matchCount
+  WHERE matchCount > 0
+  RETURN {
+    username: u.username,
+    avatar: u.avatar,
+    matchCount: matchCount
+  } AS userData
+  ORDER BY matchCount DESC
+  LIMIT $limit
+`,
 } as const;

@@ -36,9 +36,8 @@ export default async function adminRoutes(app: FastifyInstance) {
 
   // GET /admin/dashboard — comprehensive dashboard data
   app.get('/dashboard', { preHandler: [requireAuth, requireAdmin] }, async (_req, reply) => {
-    const session = getSession();
     try {
-      // Execute all dashboard queries in parallel
+      // Create separate sessions for parallel execution
       const [
         statsResult,
         topRatedResult,
@@ -46,12 +45,16 @@ export default async function adminRoutes(app: FastifyInstance) {
         searchTimeslotsResult,
         topMatchesResult,
       ] = await Promise.all([
-        session.run(Q.ADMIN_STATS),
-        session.run(Q.DASHBOARD_TOP_RATED_USERS, { limit: 5 }),
-        session.run(Q.DASHBOARD_TOP_LOBBIES, { limit: 5 }),
-        session.run(Q.DASHBOARD_SEARCH_TIMESLOTS),
-        session.run(Q.DASHBOARD_TOP_MATCHES_USERS, { limit: 5 }),
+        (async () => { const s = getSession(); try { return await s.run(Q.ADMIN_STATS); } finally { await s.close(); } })(),
+        (async () => { const s = getSession(); try { return await s.run(Q.DASHBOARD_TOP_RATED_USERS, { limit: 5 }); } finally { await s.close(); } })(),
+        (async () => { const s = getSession(); try { return await s.run(Q.DASHBOARD_TOP_LOBBIES, { limit: 5 }); } finally { await s.close(); } })(),
+        (async () => { const s = getSession(); try { return await s.run(Q.DASHBOARD_SEARCH_TIMESLOTS); } finally { await s.close(); } })(),
+        (async () => { const s = getSession(); try { return await s.run(Q.DASHBOARD_TOP_MATCHES_USERS, { limit: 5 }); } finally { await s.close(); } })(),
       ]);
+
+      if (!statsResult.records.length) {
+        return reply.code(500).send({ error: 'No stats data available' });
+      }
 
       const statsRow = statsResult.records[0];
       const topRated = topRatedResult.records.map((r) => r.get('userData').properties);
@@ -96,8 +99,9 @@ export default async function adminRoutes(app: FastifyInstance) {
           matchCount: parseNeo4jValue(u.matchCount),
         })),
       });
-    } finally {
-      await session.close();
+    } catch (error) {
+      console.error('[admin] dashboard error:', error);
+      reply.code(500).send({ error: 'Error fetching dashboard data' });
     }
   });
 
