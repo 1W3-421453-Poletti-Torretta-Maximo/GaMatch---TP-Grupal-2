@@ -136,6 +136,11 @@ export const Q = {
     SET d.timestamp = datetime()
   `,
 
+  CLEAR_DISLIKES: `
+    MATCH (u:User {id: $userId})-[d:DISLIKED]->()
+    DELETE d
+  `,
+
   CHECK_MUTUAL_LIKE: `
     MATCH (a:User {id: $fromId})-[:LIKED]->(b:User {id: $toId})-[:LIKED]->(a)
     RETURN count(*) > 0 AS isMatch

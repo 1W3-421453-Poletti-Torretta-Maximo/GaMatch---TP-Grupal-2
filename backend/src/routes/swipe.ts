@@ -8,6 +8,15 @@ import { requireAuth, JwtPayload } from '../middleware/auth.js';
 type AuthRequest = { user: JwtPayload };
 
 export default async function swipeRoutes(app: FastifyInstance) {
+  // DELETE /swipe/dislikes — clear all dislikes for current user
+  app.delete('/dislikes', { preHandler: requireAuth }, async (req, reply) => {
+    const { userId } = (req as typeof req & AuthRequest).user;
+    const session = getSession();
+    await session.run(Q.CLEAR_DISLIKES, { userId });
+    await session.close();
+    reply.send({ ok: true });
+  });
+
   // POST /swipe — { targetId, direction: 'like' | 'dislike' }
   app.post('/', { preHandler: requireAuth }, async (req, reply) => {
     const { userId } = (req as typeof req & AuthRequest).user;

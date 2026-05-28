@@ -88,11 +88,21 @@ export function SwipeDeck() {
         >
           Recargar
         </button>
+        <button
+          onClick={async () => {
+            await api.delete('/swipe/dislikes');
+            fetchCandidates();
+          }}
+          className="px-4 py-2 rounded-full border border-brand-400 text-brand-600 font-medium text-sm hover:bg-brand-50 transition"
+        >
+          Limpiar rechazos
+        </button>
       </div>
     );
   }
 
   return (
+    <div className="flex flex-col items-center gap-4">
     <div className="relative w-full max-w-sm mx-auto" style={{ height: '520px' }}>
       {/* Background cards (static) */}
       {candidates.slice(1, 4).map((c, i) => (
@@ -124,5 +134,16 @@ export function SwipeDeck() {
         </animated.div>
       )}
     </div>
+
+    <button
+      onClick={async () => {
+        await api.delete('/swipe/dislikes');
+        fetchCandidates();
+      }}
+      className="text-xs text-gray-400 hover:text-brand-500 underline underline-offset-2 transition"
+    >
+      Limpiar rechazos
+    </button>
+  </div>
   );
 }
