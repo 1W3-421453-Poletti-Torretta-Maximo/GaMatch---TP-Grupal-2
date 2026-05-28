@@ -61,7 +61,12 @@ registerSocketHandlers(io);
 app.get('/health', async () => ({ status: 'ok' }));
 
 await initNeo4j();
-const mongoDb = await connectToMongo();
+let mongoDb;
+try {
+  mongoDb = await connectToMongo();
+} catch (err) {
+  console.error('[mongo] connection failed — chat unavailable:', (err as Error).message);
+}
 if (mongoDb) await ensureMessageIndexes(mongoDb);
 
 const port = Number(process.env.PORT ?? 3001);
