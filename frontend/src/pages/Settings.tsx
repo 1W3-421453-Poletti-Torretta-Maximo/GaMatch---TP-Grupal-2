@@ -8,6 +8,7 @@ export default function Settings() {
   const [catalog, setCatalog] = useState<GameWithMeta[]>([]);
   const [timeslots, setTimeslots] = useState<TimeSlot[]>([]);
   const [userPlayHours, setUserPlayHours] = useState<PlayHours | null>(null);
+  const [usePlayHoursFilter, setUsePlayHoursFilter] = useState(false); // <--- NUEVO
   const { filters, setFilters, fetchCandidates } = useSwipeStore();
   const { games: userGames, timeSlots: userTimeSlots, playHours } = useAuthStore();
   const [applied, setApplied] = useState(false);
@@ -21,6 +22,10 @@ export default function Settings() {
     if (playHours) {
       setUserPlayHours(playHours);
     }
+    // Inicializar switch basado en si hay filtros o no
+    if (filters.playHoursStart !== undefined || filters.playHoursEnd !== undefined) {
+      setUsePlayHoursFilter(true);
+    }
   }, [playHours]);
 
   const toggleGame = (id: string) => {
@@ -31,6 +36,17 @@ export default function Settings() {
   };
 
   const applyFilters = async () => {
+    // Si llenó solo uno de los dos filtros, forzar a rellenar el faltante usando su propio perfil. Si apaga el switch, limpiamos.
+    if (!usePlayHoursFilter) {
+      setFilters({ playHoursStart: undefined, playHoursEnd: undefined });
+    } else {
+      if (filters.playHoursStart !== undefined && filters.playHoursEnd === undefined) {
+        setFilters({ playHoursEnd: userPlayHours?.endHour });
+      } else if (filters.playHoursEnd !== undefined && filters.playHoursStart === undefined) {
+        setFilters({ playHoursStart: userPlayHours?.startHour });
+      }
+    }
+
     await fetchCandidates();
     setApplied(true);
     setTimeout(() => {
@@ -166,42 +182,70 @@ export default function Settings() {
       {/* Play Hours filter */}
       {userPlayHours && (
         <section className="bg-white rounded-2xl p-4 border border-gray-100 mb-6">
-          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-3">
-            Filtrar por horario de juego
-          </label>
-          <p className="text-xs text-gray-400 mb-3">
-            Tu horario: {String(userPlayHours.startHour).padStart(2, '0')}:00 - {String(userPlayHours.endHour).padStart(2, '0')}:00
-          </p>
-          <div className="space-y-3">
+          <div className="flex items-center justify-between mb-3 cursor-pointer" onClick={() => setUsePlayHoursFilter(!usePlayHoursFilter)}>
             <div>
-              <label className="text-xs font-semibold text-gray-600 block mb-2">Desde:</label>
-              <div className="flex gap-2">
-                <input
-                  type="number"
-                  min="0"
-                  max="23"
-                  value={filters.playHoursStart ?? userPlayHours.startHour}
-                  onChange={(e) => setFilters({ playHoursStart: parseInt(e.target.value) || undefined })}
-                  className="flex-1 text-sm border border-gray-200 rounded-xl px-3 py-2 outline-none focus:border-brand-400 transition"
-                />
-                <span className="text-sm font-semibold text-gray-600 self-center">:00</span>
-              </div>
+               <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block">
+                Filtrar por horario de juego
+               </label>
+               <p className="text-xs text-gray-400 mt-0.5">
+                Exigir coincidir con horarios
+               </p>
             </div>
-            <div>
-              <label className="text-xs font-semibold text-gray-600 block mb-2">Hasta:</label>
-              <div className="flex gap-2">
-                <input
-                  type="number"
-                  min="0"
-                  max="23"
-                  value={filters.playHoursEnd ?? userPlayHours.endHour}
-                  onChange={(e) => setFilters({ playHoursEnd: parseInt(e.target.value) || undefined })}
-                  className="flex-1 text-sm border border-gray-200 rounded-xl px-3 py-2 outline-none focus:border-brand-400 transition"
-                />
-                <span className="text-sm font-semibold text-gray-600 self-center">:00</span>
-              </div>
+            {/* Switch UI idéntica al Online Only */}
+            <div
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors
+                ${usePlayHoursFilter ? 'bg-brand-600' : 'bg-gray-200'}`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform
+                  ${usePlayHoursFilter ? 'translate-x-6' : 'translate-x-1'}`}
+              />
             </div>
           </div>
+
+          {usePlayHoursFilter && (
+            <>
+              <p className="text-xs text-gray-400 mb-3">
+                Tu horario: {String(userPlayHours.startHour).padStart(2, '0')}:00 - {String(userPlayHours.endHour).padStart(2, '0')}:00
+              </p>
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-semibold text-gray-600 block mb-2">Desde:</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      min="0"
+                      max="23"
+                      value={filters.playHoursStart ?? userPlayHours.startHour}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value);
+                        setFilters({ playHoursStart: Number.isNaN(val) ? undefined : val });
+                      }}
+                      className="flex-1 text-sm border border-gray-200 rounded-xl px-3 py-2 outline-none focus:border-brand-400 transition"
+                    />
+                    <span className="text-sm font-semibold text-gray-600 self-center">:00</span>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-600 block mb-2">Hasta:</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      min="0"
+                      max="23"
+                      value={filters.playHoursEnd ?? userPlayHours.endHour}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value);
+                        setFilters({ playHoursEnd: Number.isNaN(val) ? undefined : val });
+                      }}
+                      className="flex-1 text-sm border border-gray-200 rounded-xl px-3 py-2 outline-none focus:border-brand-400 transition"
+                    />
+                    <span className="text-sm font-semibold text-gray-600 self-center">:00</span>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
         </section>
       )}
 
