@@ -38,6 +38,14 @@ export function SwipeCard({ candidate, style, onLike, onDislike, isTop }: Props)
         {candidate.bio && (
           <p className="text-sm text-white/80 mb-3 line-clamp-2">{candidate.bio}</p>
         )}
+        {candidate.avgRating !== undefined && candidate.avgRating > 0 && (
+          <div className="flex items-center gap-1 mb-2">
+            {[1, 2, 3, 4, 5].map((s) => (
+              <span key={s} className={`text-sm ${s <= Math.round(candidate.avgRating!) ? 'text-yellow-400' : 'text-white/30'}`}>★</span>
+            ))}
+            <span className="text-xs text-white/60 ml-1">({candidate.avgRating.toFixed(1)})</span>
+          </div>
+        )}
         <div className="flex flex-wrap gap-1.5 mb-4">
           {candidate.games.slice(0, 3).map((g, i) => (
             <span key={i} className="flex items-center gap-0.5">
@@ -74,7 +82,7 @@ export function SwipeCard({ candidate, style, onLike, onDislike, isTop }: Props)
                 aria-label="Dislike"
             >
               ✕
-            </button>
+            </button> 
             <button
                 onClick={onLike}
                 className="flex items-center justify-center h-14 w-14 rounded-full bg-brand-gradient shadow-lg text-2xl hover:scale-110 active:scale-95 transition-transform"

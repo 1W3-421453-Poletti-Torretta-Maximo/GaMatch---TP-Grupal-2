@@ -50,6 +50,7 @@ export interface Candidate extends User {
   games: UserGame[];
   generalTimeSlots?: string[];
   playHours?: PlayHours;
+  avgRating?: number;
 }
 
 export interface Match {

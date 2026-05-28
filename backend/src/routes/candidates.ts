@@ -70,12 +70,14 @@ export default async function candidateRoutes(app: FastifyInstance) {
         const rawGames = r.get('games');
         const rawGeneralSlots = r.get('generalSlots');
         const rawPlayHours = r.get('playHours');
+        const rawAvgRating = r.get('avgRating');
 
         return parseNeo4jValues({
           ...rawProperties,
           games: rawGames,
           generalTimeSlots: rawGeneralSlots,
           playHours: rawPlayHours,
+          avgRating: rawAvgRating,
         });
       });
 
