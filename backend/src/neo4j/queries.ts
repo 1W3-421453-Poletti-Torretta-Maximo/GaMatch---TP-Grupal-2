@@ -482,7 +482,8 @@ export const Q = {
 
   DASHBOARD_TOP_LOBBIES: `
     MATCH (l:Lobby)-[:FOR_GAME]->(g:Game)
-    WITH l, g, size((u:User)-[:JOINED]->(l)) AS participantCount
+    OPTIONAL MATCH (u:User)-[:JOINED]->(l)
+    WITH l, g, count(u) AS participantCount
     RETURN {
       lobbyId: l.id,
       lobbyName: l.name,
@@ -509,14 +510,13 @@ export const Q = {
   `,
 
   DASHBOARD_TOP_MATCHES_USERS: `
-    MATCH (u:User)
-    WITH u, size((u)-[:MATCHED_WITH]->()) AS matchCount
+    MATCH (u:User)-[:MATCHED_WITH]->()
+    WITH u, count(*) AS matchCount
     RETURN {
       username: u.username,
       avatar: u.avatar,
       matchCount: matchCount
     } AS userData
-    WHERE matchCount > 0
     ORDER BY matchCount DESC
     LIMIT $limit
   `,
