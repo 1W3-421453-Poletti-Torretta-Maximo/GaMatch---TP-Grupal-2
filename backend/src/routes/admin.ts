@@ -36,9 +36,8 @@ export default async function adminRoutes(app: FastifyInstance) {
 
   // GET /admin/dashboard — comprehensive dashboard data
   app.get('/dashboard', { preHandler: [requireAuth, requireAdmin] }, async (_req, reply) => {
-    const session = getSession();
+    const sessions = [getSession(), getSession(), getSession(), getSession(), getSession()];
     try {
-      // Execute all dashboard queries in parallel
       const [
         statsResult,
         topRatedResult,
@@ -46,18 +45,18 @@ export default async function adminRoutes(app: FastifyInstance) {
         searchTimeslotsResult,
         topMatchesResult,
       ] = await Promise.all([
-        session.run(Q.ADMIN_STATS),
-        session.run(Q.DASHBOARD_TOP_RATED_USERS, { limit: 5 }),
-        session.run(Q.DASHBOARD_TOP_LOBBIES, { limit: 5 }),
-        session.run(Q.DASHBOARD_SEARCH_TIMESLOTS),
-        session.run(Q.DASHBOARD_TOP_MATCHES_USERS, { limit: 5 }),
+        sessions[0].run(Q.ADMIN_STATS),
+        sessions[1].run(Q.DASHBOARD_TOP_RATED_USERS, { limit: 5 }),
+        sessions[2].run(Q.DASHBOARD_TOP_LOBBIES, { limit: 5 }),
+        sessions[3].run(Q.DASHBOARD_SEARCH_TIMESLOTS),
+        sessions[4].run(Q.DASHBOARD_TOP_MATCHES_USERS, { limit: 5 }),
       ]);
 
       const statsRow = statsResult.records[0];
-      const topRated = topRatedResult.records.map((r) => r.get('userData').properties);
-      const topLobbies = topLobbiesResult.records.map((r) => r.get('lobbyData').properties);
-      const searchTimeslots = searchTimeslotsResult.records.map((r) => r.get('slotData').properties);
-      const topMatches = topMatchesResult.records.map((r) => r.get('userData').properties);
+      const topRated = topRatedResult.records.map((r) => r.get('userData'));
+      const topLobbies = topLobbiesResult.records.map((r) => r.get('lobbyData'));
+      const searchTimeslots = searchTimeslotsResult.records.map((r) => r.get('slotData'));
+      const topMatches = topMatchesResult.records.map((r) => r.get('userData'));
 
       reply.send({
         stats: {
@@ -97,7 +96,7 @@ export default async function adminRoutes(app: FastifyInstance) {
         })),
       });
     } finally {
-      await session.close();
+      await Promise.all(sessions.map((s) => s.close()));
     }
   });
 
