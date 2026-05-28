@@ -49,12 +49,21 @@ export function SwipeCard({ candidate, style, onLike, onDislike, isTop }: Props)
               )}
             </span>
           ))}
-          {candidate.generalTimeSlots && candidate.generalTimeSlots.length > 0 && (
-            <span className="text-xs bg-white/20 rounded-full px-2 py-0.5">
-              {candidate.generalTimeSlots.map((sid) => ({ morning: '🌅', afternoon: '☀️', night: '🌙' } as Record<string, string>)[sid] ?? '').join(' ')}
-            </span>
-          )}
         </div>
+
+        {/* General time slots */}
+        {candidate.generalTimeSlots && candidate.generalTimeSlots.length > 0 && (
+          <div className="text-xs bg-white/20 rounded-full px-2 py-1 mb-3">
+            {candidate.generalTimeSlots.map((sid) => ({ morning: '🌅', afternoon: '☀️', night: '🌙' } as Record<string, string>)[sid] ?? '').join(' ')}
+          </div>
+        )}
+
+        {/* Play hours (game schedule) */}
+        {candidate.playHours && (
+          <div className="text-xs bg-blue-500/30 rounded-full px-2 py-1">
+            ⏰ {String(candidate.playHours.startHour).padStart(2, '0')}:00 - {String(candidate.playHours.endHour).padStart(2, '0')}:00
+          </div>
+        )}
 
         {/* Action buttons — only on top card */}
         {isTop && (

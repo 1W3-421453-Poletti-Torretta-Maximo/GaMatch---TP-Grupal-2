@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { User, UserGame } from '../types';
+import type { User, UserGame, PlayHours } from '../types';
 import api from '../lib/api';
 import { connectSocket, disconnectSocket } from '../lib/socket';
 
@@ -7,18 +7,21 @@ interface AuthState {
   user: User | null;
   games: UserGame[];
   timeSlots: string[];
+  playHours: PlayHours | null;
   isLoading: boolean;
   login: (token: string) => Promise<void>;
   logout: () => void;
   refreshProfile: () => Promise<void>;
   setAvatarSeed: (seed: string) => void;
   setTimeSlots: (slots: string[]) => void;
+  setPlayHours: (hours: PlayHours | null) => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   games: [],
   timeSlots: [],
+  playHours: null,
   isLoading: true,
 
   login: async (token: string) => {
@@ -30,18 +33,22 @@ export const useAuthStore = create<AuthState>((set) => ({
       const tsData = await api.get('/users/me/timeslots');
       set({ timeSlots: (tsData.data as { id: string }[]).map((ts) => ts.id) });
     } catch {}
+    try {
+      const phData = await api.get('/users/me/playhours');
+      set({ playHours: phData.data });
+    } catch {}
   },
 
   logout: () => {
     localStorage.removeItem('gamatch_token');
     disconnectSocket();
-    set({ user: null, games: [], timeSlots: [], isLoading: false });
+    set({ user: null, games: [], timeSlots: [], playHours: null, isLoading: false });
   },
 
   refreshProfile: async () => {
     try {
       const { data } = await api.get('/users/me');
-      set({ user: data.user, games: data.games });
+      set({ user: data.user, games: data.games, playHours: data.playHours || null });
       const tsData = await api.get('/users/me/timeslots');
       set({ timeSlots: (tsData.data as { id: string }[]).map((ts) => ts.id) });
     } catch {
@@ -57,6 +64,10 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   setTimeSlots: (slots: string[]) => {
     set({ timeSlots: slots });
+  },
+
+  setPlayHours: (hours: PlayHours | null) => {
+    set({ playHours: hours });
   },
 }));
 

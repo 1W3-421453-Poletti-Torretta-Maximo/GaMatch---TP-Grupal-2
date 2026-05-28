@@ -27,8 +27,11 @@ export const Q = {
     OPTIONAL MATCH (u)-[r:AVAILABLE_AT]->(gts:TimeSlot)
     WHERE g IS NOT NULL AND r.gameId = g.id
     WITH u, p, g, [ts IN collect(DISTINCT gts) WHERE ts IS NOT NULL | ts.id] AS gameSlotIds
+    WITH u, collect(CASE WHEN g IS NOT NULL THEN { game: properties(g), role: p.role, rankId: p.rankId, rankTier: p.rankTier, isLookingNow: p.isLookingNow, timeSlots: gameSlotIds } ELSE null END) AS games
+    OPTIONAL MATCH (u)-[:HAS_PLAY_HOURS]->(ph:PlayHours)
     RETURN u,
-      [x IN collect(CASE WHEN g IS NOT NULL THEN { game: properties(g), role: p.role, rankId: p.rankId, rankTier: p.rankTier, isLookingNow: p.isLookingNow, timeSlots: gameSlotIds } ELSE null END) WHERE x IS NOT NULL] AS games
+      [x IN collect(CASE WHEN x IS NOT NULL THEN x ELSE null END) | x WHERE x IS NOT NULL] AS games,
+      ph AS playHours
   `,
 
   GET_USER_BY_DISCORD: `
@@ -143,11 +146,13 @@ export const Q = {
     OPTIONAL MATCH (other)-[:AVAILABLE_AT {gameId: og.id}]->(ogTs:TimeSlot)
     WITH other, m, og, op, [ts IN collect(DISTINCT ogTs) WHERE ts IS NOT NULL | ts.id] AS ogSlotIds
     WITH other, m, collect(CASE WHEN og IS NOT NULL THEN { game: properties(og), role: op.role, rankId: op.rankId, timeSlots: ogSlotIds } ELSE null END) AS games
+    OPTIONAL MATCH (other)-[:HAS_PLAY_HOURS]->(ph:PlayHours)
     RETURN other,
            m.roomId AS roomId,
            m.matchedAt AS matchedAt,
            [x IN games WHERE x IS NOT NULL] AS games,
-           [(other)-[gr:AVAILABLE_AT]->(gts:TimeSlot) WHERE gr.gameId IS NULL | gts.id] AS generalSlots
+           [(other)-[gr:AVAILABLE_AT]->(gts:TimeSlot) WHERE gr.gameId IS NULL | gts.id] AS generalSlots,
+           CASE WHEN ph IS NOT NULL THEN { startHour: ph.startHour, endHour: ph.endHour } ELSE null END AS playHours
     ORDER BY m.matchedAt DESC
   `,
 
@@ -350,6 +355,84 @@ export const Q = {
     MATCH (:Lobby {id: $lobbyId})-[:HAS_MESSAGE]->(msg:LobbyMessage)
     RETURN msg
     ORDER BY msg.createdAt ASC
+    LIMIT $limit
+  `,
+
+  // ── PlayHours (Game play schedule) ─────────────────────────────────────────
+
+  GET_USER_PLAY_HOURS: `
+    MATCH (u:User {id: $userId})-[:HAS_PLAY_HOURS]->(ph:PlayHours)
+    RETURN ph
+  `,
+
+  UPSERT_USER_PLAY_HOURS: `
+    MATCH (u:User {id: $userId})
+    MERGE (ph:PlayHours {id: $id})
+    SET ph.startHour = $startHour,
+        ph.endHour = $endHour,
+        ph.createdAt = datetime()
+    WITH u, ph
+    OPTIONAL MATCH (u)-[old:HAS_PLAY_HOURS]->(:PlayHours)
+    DELETE old
+    CREATE (u)-[:HAS_PLAY_HOURS]->(ph)
+    RETURN ph
+  `,
+
+  DELETE_USER_PLAY_HOURS: `
+    MATCH (u:User {id: $userId})-[r:HAS_PLAY_HOURS]->(:PlayHours)
+    DELETE r
+  `,
+
+  GET_USER_BY_ID_WITH_PLAYHOURS: `
+    MATCH (u:User {id: $id})
+    OPTIONAL MATCH (u)-[p:PLAYS]->(g:Game)
+    WITH u, p, g
+    OPTIONAL MATCH (u)-[r:AVAILABLE_AT]->(gts:TimeSlot)
+    WHERE g IS NOT NULL AND r.gameId = g.id
+    WITH u, p, g, [ts IN collect(DISTINCT gts) WHERE ts IS NOT NULL | ts.id] AS gameSlotIds
+    WITH u, collect(CASE WHEN g IS NOT NULL THEN { game: properties(g), role: p.role, rankId: p.rankId, rankTier: p.rankTier, isLookingNow: p.isLookingNow, timeSlots: gameSlotIds } ELSE null END) AS games
+    OPTIONAL MATCH (u)-[:HAS_PLAY_HOURS]->(ph:PlayHours)
+    RETURN u,
+      [x IN games WHERE x IS NOT NULL] AS games,
+      ph
+  `,
+
+  GET_CANDIDATES_WITH_PLAYHOURS: `
+    MATCH (me:User {id: $myId})-[mp:PLAYS]->(game:Game)<-[cp:PLAYS]-(candidate:User)
+    WHERE candidate.id <> $myId
+      AND NOT (me)-[:LIKED|DISLIKED|MATCHED_WITH]->(candidate)
+      AND (size($gameIds) = 0 OR game.id IN $gameIds)
+      AND ($onlineOnly = false OR candidate.isOnline = true)
+      AND ($rankTolerance = -1 OR abs(toInteger(cp.rankTier) - toInteger(mp.rankTier)) <= $rankTolerance)
+    WITH DISTINCT candidate, me, game
+    OPTIONAL MATCH (me)-[:AVAILABLE_AT {gameId: game.id}]->(myTs:TimeSlot)
+    OPTIONAL MATCH (candidate)-[:AVAILABLE_AT {gameId: game.id}]->(theirTs:TimeSlot)
+    WITH candidate, me, game,
+         [ts IN collect(DISTINCT myTs) WHERE ts IS NOT NULL | ts.id] AS mySlotIds,
+         [ts IN collect(DISTINCT theirTs) WHERE ts IS NOT NULL | ts.id] AS theirSlotIds
+    WHERE size(mySlotIds) = 0 OR any(s IN mySlotIds WHERE s IN theirSlotIds)
+    WITH DISTINCT candidate, me
+    WHERE size($timeSlotIds) = 0 OR size([(candidate)-[gtr:AVAILABLE_AT]->(ts2:TimeSlot) WHERE gtr.gameId IS NULL AND ts2.id IN $timeSlotIds | ts2]) > 0
+    WITH DISTINCT candidate
+    OPTIONAL MATCH (candidate)-[op:PLAYS]->(og:Game)
+    OPTIONAL MATCH (candidate)-[:AVAILABLE_AT {gameId: og.id}]->(ogTs:TimeSlot)
+    WITH candidate, op, og, [ts IN collect(DISTINCT ogTs) WHERE ts IS NOT NULL | ts.id] AS ogSlotIds
+    WITH candidate,
+      collect(CASE WHEN og IS NOT NULL THEN { game: properties(og), role: op.role, rankId: op.rankId, rankTier: op.rankTier, isLookingNow: op.isLookingNow, timeSlots: ogSlotIds } ELSE null END) AS rawGames
+    WITH candidate, rawGames,
+      [(()-[rate:RATED]->(candidate)) | toFloat(rate.stars)] AS ratingList
+    WITH candidate, rawGames,
+      CASE WHEN size(ratingList) = 0 THEN 0.0 ELSE reduce(s = 0.0, v IN ratingList | s + v) / toFloat(size(ratingList)) END AS avgRating
+    OPTIONAL MATCH (candidate)-[:HAS_PLAY_HOURS]->(ph:PlayHours)
+    WITH candidate, rawGames, avgRating, ph
+    WHERE ($playHoursStart IS NULL AND $playHoursEnd IS NULL)
+      OR (ph IS NOT NULL AND ph.startHour <= $playHoursEnd AND ph.endHour >= $playHoursStart)
+    RETURN candidate,
+      [x IN rawGames WHERE x IS NOT NULL] AS games,
+      [(candidate)-[gr:AVAILABLE_AT]->(gts:TimeSlot) WHERE gr.gameId IS NULL | gts.id] AS generalSlots,
+      CASE WHEN ph IS NOT NULL THEN { startHour: ph.startHour, endHour: ph.endHour } ELSE null END AS playHours,
+      avgRating
+    ORDER BY avgRating DESC, rand()
     LIMIT $limit
   `,
 } as const;

@@ -47,17 +47,21 @@ export default async function candidateRoutes(app: FastifyInstance) {
     const rankTolerance = isNaN(parsedTolerance) ? -1 : parsedTolerance;
     const parsedLimit = parseInt(query.limit ?? '10');
     const limit = Math.min(isNaN(parsedLimit) ? 10 : parsedLimit, 50);
+    const playHoursStart = query.playHoursStart !== undefined ? parseInt(query.playHoursStart) : null;
+    const playHoursEnd = query.playHoursEnd !== undefined ? parseInt(query.playHoursEnd) : null;
 
     const session = getSession();
 
     try {
-      // Fetch candidates
-      const result = await session.run(Q.GET_CANDIDATES, {
+      // Fetch candidates with PlayHours
+      const result = await session.run(Q.GET_CANDIDATES_WITH_PLAYHOURS, {
         myId: myId,
         gameIds: gameIds,
         timeSlotIds: timeSlotIds,
         onlineOnly: onlineOnly,
         rankTolerance: neo4j.int(rankTolerance),
+        playHoursStart: playHoursStart !== null ? neo4j.int(playHoursStart) : null,
+        playHoursEnd: playHoursEnd !== null ? neo4j.int(playHoursEnd) : null,
         limit: neo4j.int(limit),
       });
 
@@ -65,11 +69,13 @@ export default async function candidateRoutes(app: FastifyInstance) {
         const rawProperties = r.get('candidate').properties;
         const rawGames = r.get('games');
         const rawGeneralSlots = r.get('generalSlots');
+        const rawPlayHours = r.get('playHours');
 
         return parseNeo4jValues({
           ...rawProperties,
           games: rawGames,
           generalTimeSlots: rawGeneralSlots,
+          playHours: rawPlayHours,
         });
       });
 

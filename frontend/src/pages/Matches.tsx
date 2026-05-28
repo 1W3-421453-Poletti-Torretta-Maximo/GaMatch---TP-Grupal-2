@@ -133,6 +133,12 @@ export default function Matches() {
                             {m.generalTimeSlots.map((sid) => timeslotIcons[sid] ?? '').join(' ')}
                           </span>
                         )}
+                        {/* Play hours */}
+                        {m.playHours && (
+                          <span className="text-xs ml-1" title={`Horario de juego: ${String(m.playHours.startHour).padStart(2, '0')}:00 - ${String(m.playHours.endHour).padStart(2, '0')}:00`}>
+                            ⏰ {String(m.playHours.startHour).padStart(2, '0')}:{String(m.playHours.endHour).padStart(2, '0')}
+                          </span>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">

@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../store/authStore';
-import type { GameWithMeta, TimeSlot } from '../types';
+import type { GameWithMeta, TimeSlot, PlayHours } from '../types';
 import api from '../lib/api';
 import { AvatarDisplay } from '../components/AvatarDisplay/AvatarDisplay';
 import { GameBadge } from '../components/GameBadge/GameBadge';
 import { Plus, Trash2, LogOut, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function Profile() {
-  const { user, games, refreshProfile, logout } = useAuthStore();
+  const { user, games, playHours, refreshProfile, logout, setPlayHours } = useAuthStore();
   const [catalog, setCatalog] = useState<GameWithMeta[]>([]);
   const [bio, setBio] = useState(user?.bio ?? '');
   const [avatarSeed, setAvatarSeedLocal] = useState(user?.avatarSeed ?? '');
@@ -17,13 +17,19 @@ export default function Profile() {
   const [timeslots, setTimeslots] = useState<TimeSlot[]>([]);
   const [seedList, setSeedList] = useState<string[]>(() => [user?.avatarSeed ?? user?.id ?? '']);
   const [seedIdx, setSeedIdx] = useState(0);
+  const [addingPlayHours, setAddingPlayHours] = useState(false);
+  const [playHoursForm, setPlayHoursForm] = useState({ startHour: 9, endHour: 17 });
+  const [savingPlayHours, setSavingPlayHours] = useState(false);
   const selectedSlots = useAuthStore((s) => s.timeSlots);
   const setTimeSlots = useAuthStore((s) => s.setTimeSlots);
 
   useEffect(() => {
     api.get<GameWithMeta[]>('/games').then(({ data }) => setCatalog(data));
     api.get<TimeSlot[]>('/timeslots').then(({ data }) => setTimeslots(data));
-  }, []);
+    if (playHours) {
+      setPlayHoursForm({ startHour: playHours.startHour, endHour: playHours.endHour });
+    }
+  }, [playHours]);
 
   const saveBio = async () => {
     setSaving(true);
@@ -33,6 +39,37 @@ export default function Profile() {
     await api.patch('/users/me', body);
     await refreshProfile();
     setSaving(false);
+  };
+
+  const savePlayHours = async () => {
+    if (playHoursForm.startHour >= playHoursForm.endHour) {
+      alert('La hora de inicio debe ser anterior a la hora de fin');
+      return;
+    }
+    setSavingPlayHours(true);
+    try {
+      const { data } = await api.put('/users/me/playhours', {
+        startHour: playHoursForm.startHour,
+        endHour: playHoursForm.endHour,
+      });
+      setPlayHours(data);
+      setAddingPlayHours(false);
+      await refreshProfile();
+    } catch (error) {
+      console.error('Error saving play hours:', error);
+    } finally {
+      setSavingPlayHours(false);
+    }
+  };
+
+  const removePlayHours = async () => {
+    try {
+      await api.delete('/users/me/playhours');
+      setPlayHours(null);
+      await refreshProfile();
+    } catch (error) {
+      console.error('Error removing play hours:', error);
+    }
   };
 
   const removeGame = async (gameId: string) => {
@@ -162,6 +199,103 @@ export default function Profile() {
           </p>
         </section>
       )}
+
+      {/* Play Hours (Game Schedule) */}
+      <section className="bg-white rounded-2xl p-4 border border-gray-100 mb-4">
+        <div className="flex items-center justify-between mb-3">
+          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Horarios de juego</label>
+          {!addingPlayHours && (
+            <button
+              onClick={() => {
+                setAddingPlayHours(true);
+                if (playHours) {
+                  setPlayHoursForm({ startHour: playHours.startHour, endHour: playHours.endHour });
+                }
+              }}
+              className="flex items-center gap-1 text-brand-600 text-xs font-semibold hover:opacity-80 transition"
+            >
+              <Plus size={14} /> {playHours ? 'Editar' : 'Agregar'}
+            </button>
+          )}
+        </div>
+
+        {playHours && !addingPlayHours && (
+          <div className="flex items-center justify-between bg-brand-50 rounded-xl p-3 mb-2">
+            <div>
+              <p className="text-sm font-semibold text-gray-800">
+                {String(playHours.startHour).padStart(2, '0')}:00 - {String(playHours.endHour).padStart(2, '0')}:00
+              </p>
+              <p className="text-xs text-gray-500 mt-0.5">Tu horario de juego preferido</p>
+            </div>
+            <button
+              onClick={removePlayHours}
+              className="text-red-400 hover:text-red-600 transition"
+            >
+              <Trash2 size={16} />
+            </button>
+          </div>
+        )}
+
+        {!playHours && !addingPlayHours && (
+          <p className="text-sm text-gray-400 text-center py-2">No tenés horarios configurados</p>
+        )}
+
+        {addingPlayHours && (
+          <div className="border-t border-gray-100 pt-3 space-y-3">
+            <div>
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-2">
+                Hora de inicio
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  min="0"
+                  max="23"
+                  step="1"
+                  value={playHoursForm.startHour}
+                  onChange={(e) => setPlayHoursForm({ ...playHoursForm, startHour: parseInt(e.target.value) })}
+                  className="flex-1 text-sm border border-gray-200 rounded-xl px-3 py-2 outline-none focus:border-brand-400 transition"
+                />
+                <span className="text-sm font-semibold text-gray-600 self-center">:00</span>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-2">
+                Hora de fin
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  min="0"
+                  max="23"
+                  step="1"
+                  value={playHoursForm.endHour}
+                  onChange={(e) => setPlayHoursForm({ ...playHoursForm, endHour: parseInt(e.target.value) })}
+                  className="flex-1 text-sm border border-gray-200 rounded-xl px-3 py-2 outline-none focus:border-brand-400 transition"
+                />
+                <span className="text-sm font-semibold text-gray-600 self-center">:00</span>
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-1">
+              <button
+                onClick={() => setAddingPlayHours(false)}
+                className="flex-1 py-2 rounded-full border border-gray-200 text-gray-500 text-xs font-semibold hover:bg-gray-50 transition"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={savePlayHours}
+                disabled={savingPlayHours}
+                className="flex-1 py-2 rounded-full bg-brand-gradient text-white text-xs font-semibold hover:opacity-90 disabled:opacity-50 transition"
+              >
+                {savingPlayHours ? 'Guardando...' : 'Confirmar horario'}
+              </button>
+            </div>
+          </div>
+        )}
+      </section>
 
       {/* Games */}
       <section className="bg-white rounded-2xl p-4 border border-gray-100 mb-4">

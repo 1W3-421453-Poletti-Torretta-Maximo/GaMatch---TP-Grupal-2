@@ -49,6 +49,7 @@ export interface User {
 export interface Candidate extends User {
   games: UserGame[];
   generalTimeSlots?: string[];
+  playHours?: PlayHours;
 }
 
 export interface Match {
@@ -57,6 +58,7 @@ export interface Match {
   matchedAt: string;
   games: UserGame[];
   generalTimeSlots?: string[];
+  playHours?: PlayHours;
 }
 
 export interface Message {
@@ -74,6 +76,13 @@ export interface TimeSlot {
   label: string;
   startHour: number;
   endHour: number;
+}
+
+export interface PlayHours {
+  id: string;
+  startHour: number;
+  endHour: number;
+  createdAt: string;
 }
 
 export interface Lobby {
@@ -98,4 +107,6 @@ export interface SwipeFilters {
   onlineOnly: boolean;
   rankTolerance: number;
   timeSlotIds: string[];
+  playHoursStart?: number;
+  playHoursEnd?: number;
 }

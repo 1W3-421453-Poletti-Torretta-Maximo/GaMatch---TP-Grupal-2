@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { GameWithMeta, TimeSlot } from '../types';
+import type { GameWithMeta, TimeSlot, PlayHours } from '../types';
 import { useSwipeStore } from '../store/swipeStore';
 import { useAuthStore } from '../store/authStore';
 import api from '../lib/api';
@@ -7,8 +7,9 @@ import api from '../lib/api';
 export default function Settings() {
   const [catalog, setCatalog] = useState<GameWithMeta[]>([]);
   const [timeslots, setTimeslots] = useState<TimeSlot[]>([]);
+  const [userPlayHours, setUserPlayHours] = useState<PlayHours | null>(null);
   const { filters, setFilters, fetchCandidates } = useSwipeStore();
-  const { games: userGames, timeSlots: userTimeSlots } = useAuthStore();
+  const { games: userGames, timeSlots: userTimeSlots, playHours } = useAuthStore();
   const [applied, setApplied] = useState(false);
 
   const userGameIds = new Set(userGames.map((g) => g.game.id));
@@ -17,7 +18,10 @@ export default function Settings() {
   useEffect(() => {
     api.get<GameWithMeta[]>('/games').then(({ data }) => setCatalog(data));
     api.get<TimeSlot[]>('/timeslots').then(({ data }) => setTimeslots(data));
-  }, []);
+    if (playHours) {
+      setUserPlayHours(playHours);
+    }
+  }, [playHours]);
 
   const toggleGame = (id: string) => {
     const updated = filters.gameIds.includes(id)
@@ -155,6 +159,48 @@ export default function Settings() {
                 </button>
               );
             })}
+          </div>
+        </section>
+      )}
+
+      {/* Play Hours filter */}
+      {userPlayHours && (
+        <section className="bg-white rounded-2xl p-4 border border-gray-100 mb-6">
+          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-3">
+            Filtrar por horario de juego
+          </label>
+          <p className="text-xs text-gray-400 mb-3">
+            Tu horario: {String(userPlayHours.startHour).padStart(2, '0')}:00 - {String(userPlayHours.endHour).padStart(2, '0')}:00
+          </p>
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs font-semibold text-gray-600 block mb-2">Desde:</label>
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  min="0"
+                  max="23"
+                  value={filters.playHoursStart ?? userPlayHours.startHour}
+                  onChange={(e) => setFilters({ playHoursStart: parseInt(e.target.value) || undefined })}
+                  className="flex-1 text-sm border border-gray-200 rounded-xl px-3 py-2 outline-none focus:border-brand-400 transition"
+                />
+                <span className="text-sm font-semibold text-gray-600 self-center">:00</span>
+              </div>
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-gray-600 block mb-2">Hasta:</label>
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  min="0"
+                  max="23"
+                  value={filters.playHoursEnd ?? userPlayHours.endHour}
+                  onChange={(e) => setFilters({ playHoursEnd: parseInt(e.target.value) || undefined })}
+                  className="flex-1 text-sm border border-gray-200 rounded-xl px-3 py-2 outline-none focus:border-brand-400 transition"
+                />
+                <span className="text-sm font-semibold text-gray-600 self-center">:00</span>
+              </div>
+            </div>
           </div>
         </section>
       )}

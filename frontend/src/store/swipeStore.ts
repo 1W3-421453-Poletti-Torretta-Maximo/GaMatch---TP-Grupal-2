@@ -25,6 +25,8 @@ export const useSwipeStore = create<SwipeState>((set, get) => ({
     onlineOnly: false,
     rankTolerance: 2,
     timeSlotIds: [],
+    playHoursStart: undefined,
+    playHoursEnd: undefined,
   },
 
   fetchCandidates: async () => {
@@ -40,6 +42,8 @@ export const useSwipeStore = create<SwipeState>((set, get) => ({
     };
     if (filters.gameIds.length) params.gameIds = filters.gameIds.join(',');
     if (filters.timeSlotIds.length) params.timeSlotIds = filters.timeSlotIds.join(',');
+    if (filters.playHoursStart !== undefined) params.playHoursStart = String(filters.playHoursStart);
+    if (filters.playHoursEnd !== undefined) params.playHoursEnd = String(filters.playHoursEnd);
 
     try {
       const { data } = await api.get<Candidate[]>('/candidates', { params });
