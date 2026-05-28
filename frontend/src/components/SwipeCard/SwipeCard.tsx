@@ -13,7 +13,7 @@ interface Props {
 export function SwipeCard({ candidate, style, onLike, onDislike, isTop }: Props) {
   return (
     <div
-      className="absolute inset-0 rounded-4xl overflow-hidden shadow-card select-none touch-none"
+      className="absolute inset-0 rounded-4xl overflow-hidden shadow-card select-none touch-none bg-gray-950"
       style={style}
     >
       {/* Background avatar */}
