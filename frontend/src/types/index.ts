@@ -67,7 +67,7 @@ export interface Message {
   id: string;
   content: string;
   sentAt?: string;
-  createdAt: string;
+  createdAt?: string;
   roomId?: string;
   senderId: string;
   senderUsername?: string;
@@ -105,7 +105,8 @@ export interface LobbyMessage {
   senderName: string;
   senderUsername?: string;
   senderAvatar?: string;
-  createdAt: string;
+  sentAt?: string;
+  createdAt?: string;
 }
 
 export interface SwipeFilters {

@@ -254,36 +254,3 @@ export default function AdminDashboard() {
     </main>
   );
 }
-        </div>
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-xs text-gray-400 uppercase border-b border-gray-50">
-              <th className="text-left px-4 py-2 font-medium">#</th>
-              <th className="text-left px-4 py-2 font-medium">Usuario</th>
-              <th className="text-right px-4 py-2 font-medium">Matches</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-50">
-            {stats.topUsers.map((u, i) => (
-              <tr key={u.username} className="hover:bg-brand-50">
-                <td className="px-4 py-2 text-gray-400">{i + 1}</td>
-                <td className="px-4 py-2 font-medium text-gray-800">{u.username}</td>
-                <td className="px-4 py-2 text-right text-gray-600">{u.count}</td>
-              </tr>
-            ))}
-            {stats.topUsers.length === 0 && (
-              <tr><td colSpan={3} className="px-4 py-4 text-center text-gray-400">Sin datos</td></tr>
-            )}
-          </tbody>
-        </table>
-      </section>
-
-      <div className="mt-6 p-4 bg-gray-50 rounded-2xl border border-gray-200">
-        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Promover usuario a admin</p>
-        <code className="text-xs text-gray-600 block break-all">
-          MATCH (u:User &#123;discordId: 'TU_ID'&#125;) SET u.role = 'admin'
-        </code>
-      </div>
-    </main>
-  );
-}

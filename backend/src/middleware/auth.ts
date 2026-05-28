@@ -6,10 +6,14 @@ export interface JwtPayload {
   discordId: string;
 }
 
+function abort(reply: FastifyReply, statusCode: number, error: string): void {
+  reply.code(statusCode).send({ error });
+}
+
 export async function requireAuth(req: FastifyRequest, reply: FastifyReply): Promise<void> {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith('Bearer ')) {
-    reply.code(401).send({ error: 'Missing or invalid authorization header' });
+    abort(reply, 401, 'Missing or invalid authorization header');
     return;
   }
 
@@ -18,7 +22,7 @@ export async function requireAuth(req: FastifyRequest, reply: FastifyReply): Pro
     const payload = jwt.verify(token, process.env.JWT_SECRET ?? 'dev_secret') as JwtPayload;
     (req as FastifyRequest & { user: JwtPayload }).user = payload;
   } catch {
-    reply.code(401).send({ error: 'Invalid or expired token' });
+    abort(reply, 401, 'Invalid or expired token');
   }
 }
 
