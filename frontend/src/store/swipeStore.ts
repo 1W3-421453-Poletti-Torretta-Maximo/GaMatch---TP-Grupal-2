@@ -31,7 +31,7 @@ export const useSwipeStore = create<SwipeState>((set, get) => ({
     const { isFetching } = get();
     if (isFetching) return;
 
-    set({ isFetching: true });
+    set({ isFetching: true, hasMore: true });
     const { filters, seenCandidates, candidates } = get();
     const params: Record<string, string> = {
       limit: '30',
@@ -48,7 +48,7 @@ export const useSwipeStore = create<SwipeState>((set, get) => ({
       const updated = [...candidates, ...newCandidates];
       set({ candidates: updated, isFetching: false, hasMore: newCandidates.length > 0 });
     } catch {
-      set({ isFetching: false });
+      set({ isFetching: false, hasMore: false });
     }
   },
 

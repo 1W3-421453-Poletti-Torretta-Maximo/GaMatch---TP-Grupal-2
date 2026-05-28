@@ -37,7 +37,7 @@ export default async function swipeRoutes(app: FastifyInstance) {
     const existingMatch = existingMatchResult.records[0].get('exists');
     if (existingMatch) {
       await session.close();
-      return reply.send({ match: false });
+      return reply.send({ match: false, alreadyMatched: true });
     }
 
     await session.run(Q.RECORD_LIKE, { fromId: userId, toId: targetId });

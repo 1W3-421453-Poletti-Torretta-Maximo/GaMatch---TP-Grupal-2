@@ -51,11 +51,18 @@ export function LobbyChat({ lobbyId }: Props) {
     if (!user || likedUsers.has(targetId) || targetId === user.id) return;
     setLikedUsers((prev) => new Set(prev).add(targetId));
     try {
-      const { data } = await api.post<{ match: boolean; roomId?: string }>('/swipe', {
+      const { data } = await api.post<{ match: boolean; roomId?: string; alreadyMatched?: boolean }>('/swipe', {
         targetId,
         direction: 'like',
       });
-      const notif = data.match ? `¡GaMatch con ${senderName}! 💜` : `¡Like enviado a ${senderName}!`;
+      let notif: string;
+      if (data.alreadyMatched) {
+        notif = `Ya hiciste match con ${senderName} 💜`;
+      } else if (data.match) {
+        notif = `¡GaMatch con ${senderName}! 💜`;
+      } else {
+        notif = `¡Like enviado a ${senderName}!`;
+      }
       setLobbyNotif(notif);
       setTimeout(() => setLobbyNotif(null), 3000);
     } catch {

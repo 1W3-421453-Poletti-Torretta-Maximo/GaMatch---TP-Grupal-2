@@ -98,12 +98,15 @@ export const Q = {
     WITH candidate, op, og, [ts IN collect(DISTINCT ogTs) WHERE ts IS NOT NULL | ts.id] AS ogSlotIds
     WITH candidate,
       collect(CASE WHEN og IS NOT NULL THEN { game: properties(og), role: op.role, rankId: op.rankId, rankTier: op.rankTier, isLookingNow: op.isLookingNow, timeSlots: ogSlotIds } ELSE null END) AS rawGames
+    WITH candidate, rawGames,
+      [(()-[rate:RATED]->(candidate)) | toFloat(rate.stars)] AS ratingList
+    WITH candidate, rawGames,
+      CASE WHEN size(ratingList) = 0 THEN 0.0 ELSE reduce(s = 0.0, v IN ratingList | s + v) / toFloat(size(ratingList)) END AS avgRating
     RETURN candidate,
       [x IN rawGames WHERE x IS NOT NULL] AS games,
       [(candidate)-[gr:AVAILABLE_AT]->(gts:TimeSlot) WHERE gr.gameId IS NULL | gts.id] AS generalSlots,
-      size([(()-[rate:RATED]->(candidate)) | rate]) AS ratingCount,
-      reduce(total = 0.0, s IN [(()-[rate:RATED]->(candidate)) | toFloat(rate.stars)] | total + s) AS ratingSum
-    ORDER BY CASE WHEN ratingCount = 0 THEN 0.0 ELSE ratingSum / ratingCount END DESC, rand()
+      avgRating
+    ORDER BY avgRating DESC, rand()
     LIMIT $limit
   `,
 
