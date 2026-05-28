@@ -2,15 +2,14 @@ import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { getSession } from '../neo4j/driver.js';
 import { Q } from '../neo4j/queries.js';
-import { requireAuth } from '../middleware/auth.js';
-import { requireAdmin } from '../middleware/admin.js';
+import { requireAuthAndAdmin } from '../middleware/admin.js';
 import { parseNeo4jValue } from '../neo4j/utils.js';
 
 type AuthRequest = { user: { userId: string } };
 
 export default async function adminRoutes(app: FastifyInstance) {
   // GET /admin/dashboard — comprehensive dashboard data
-  app.get('/dashboard', { preHandler: [requireAuth, requireAdmin] }, async (_req, reply) => {
+  app.get('/dashboard', { preHandler: requireAuthAndAdmin }, async (_req, reply) => {
     const session = getSession();
     try {
       const [
@@ -76,7 +75,7 @@ export default async function adminRoutes(app: FastifyInstance) {
   });
 
 // POST /admin/promote — promote a user to admin
-app.post('/promote', { preHandler: [requireAuth, requireAdmin] }, async (req, reply) => {
+app.post('/promote', { preHandler: requireAuthAndAdmin }, async (req, reply) => {
   const schema = z.object({
     username: z.string().min(1),
   });

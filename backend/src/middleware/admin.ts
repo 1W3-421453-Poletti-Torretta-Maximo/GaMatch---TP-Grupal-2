@@ -1,6 +1,7 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { getSession } from '../neo4j/driver.js';
 import { Q } from '../neo4j/queries.js';
+import { requireAuth } from './auth.js';
 
 export async function requireAdmin(req: FastifyRequest, reply: FastifyReply): Promise<void> {
   const user = (req as FastifyRequest & { user: { userId: string } }).user;
@@ -24,4 +25,12 @@ export async function requireAdmin(req: FastifyRequest, reply: FastifyReply): Pr
   } finally {
     await session.close();
   }
+}
+
+/** Single preHandler that runs requireAuth then requireAdmin,
+ *  stops if either already sent a reply. */
+export async function requireAuthAndAdmin(req: FastifyRequest, reply: FastifyReply): Promise<void> {
+  await requireAuth(req, reply);
+  if (reply.sent) return;
+  await requireAdmin(req, reply);
 }
