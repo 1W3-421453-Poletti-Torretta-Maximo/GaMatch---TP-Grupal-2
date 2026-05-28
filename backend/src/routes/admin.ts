@@ -36,8 +36,9 @@ export default async function adminRoutes(app: FastifyInstance) {
 
   // GET /admin/dashboard — comprehensive dashboard data
   app.get('/dashboard', { preHandler: [requireAuth, requireAdmin] }, async (_req, reply) => {
-    const sessions = [getSession(), getSession(), getSession(), getSession(), getSession()];
+    const session = getSession();
     try {
+      // Execute all dashboard queries in parallel
       const [
         statsResult,
         topRatedResult,
@@ -45,11 +46,11 @@ export default async function adminRoutes(app: FastifyInstance) {
         searchTimeslotsResult,
         topMatchesResult,
       ] = await Promise.all([
-        sessions[0].run(Q.ADMIN_STATS),
-        sessions[1].run(Q.DASHBOARD_TOP_RATED_USERS, { limit: 5 }),
-        sessions[2].run(Q.DASHBOARD_TOP_LOBBIES, { limit: 5 }),
-        sessions[3].run(Q.DASHBOARD_SEARCH_TIMESLOTS),
-        sessions[4].run(Q.DASHBOARD_TOP_MATCHES_USERS, { limit: 5 }),
+        session.run(Q.ADMIN_STATS),
+        session.run(Q.DASHBOARD_TOP_RATED_USERS, { limit: 5 }),
+        session.run(Q.DASHBOARD_TOP_LOBBIES, { limit: 5 }),
+        session.run(Q.DASHBOARD_SEARCH_TIMESLOTS),
+        session.run(Q.DASHBOARD_TOP_MATCHES_USERS, { limit: 5 }),
       ]);
 
       const statsRow = statsResult.records[0];
@@ -96,7 +97,7 @@ export default async function adminRoutes(app: FastifyInstance) {
         })),
       });
     } finally {
-      await Promise.all(sessions.map((s) => s.close()));
+      await session.close();
     }
   });
 

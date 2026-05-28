@@ -4,6 +4,7 @@ import { useLobbyStore } from '../../store/lobbyStore';
 import { useAuthStore } from '../../store/authStore';
 import { getSocket } from '../../lib/socket';
 import api from '../../lib/api';
+import { AvatarDisplay } from '../AvatarDisplay/AvatarDisplay';
 
 interface Props {
   lobbyId: string;
@@ -115,8 +116,11 @@ export function LobbyChat({ lobbyId }: Props) {
           const messageTime = ts ? formatMessageTime(ts) : '';
           return (
             <div key={msg.id} className={`flex items-end gap-2 ${isMe ? 'flex-row-reverse' : ''}`}>
+              {!isMe && (
+                <AvatarDisplay seed={msg.senderId} size={28} className="rounded-full overflow-hidden flex-shrink-0" />
+              )}
               <div
-                className={`max-w-[72%] px-4 py-2 rounded-2xl text-sm leading-relaxed
+                className={`max-w-[72%] px-3 py-2 rounded-2xl text-sm leading-relaxed break-words
                   ${isMe
                     ? 'bg-brand-600 text-white rounded-br-sm'
                     : 'bg-gray-100 text-gray-800 rounded-bl-sm'}`}
@@ -126,13 +130,13 @@ export function LobbyChat({ lobbyId }: Props) {
                     onClick={() => handleLikeUser(msg.senderId, msg.senderName)}
                     disabled={alreadyLiked}
                     title={alreadyLiked ? 'Ya le diste like' : 'Dar like para hacer match'}
-                    className={`text-xs font-semibold mb-0.5 block text-left transition
-                      ${alreadyLiked ? 'text-brand-500 cursor-default' : 'text-gray-500 hover:text-brand-600 cursor-pointer'}`}
+                    className={`text-xs font-semibold mb-0.5 block text-left w-full truncate transition
+                      ${alreadyLiked ? 'text-brand-400 cursor-default' : 'text-brand-500 hover:text-brand-700 cursor-pointer'}`}
                   >
                     {msg.senderName}{alreadyLiked ? ' 💜' : ''}
                   </button>
                 )}
-                <p>{msg.content}</p>
+                <p className="break-words">{msg.content}</p>
                 {messageTime && (
                   <p className={`text-[10px] text-right mt-1 select-none ${isMe ? 'text-white/60' : 'text-gray-400'}`}>
                     {messageTime}
