@@ -57,10 +57,11 @@ export function SwipeDeck() {
     if (!down && last && trigger) {
       handleSwipe(mx > 0 ? 'like' : 'dislike');
     } else {
+      const dragOpacity = down ? 1 - Math.min(Math.abs(mx) / SWIPE_THRESHOLD, 1) * 0.4 : 1;
       api_spring.start({
         x: down ? mx : 0,
         rotate: down ? mx / 20 : 0,
-        opacity: 1,
+        opacity: dragOpacity,
         immediate: down,
       });
     }
