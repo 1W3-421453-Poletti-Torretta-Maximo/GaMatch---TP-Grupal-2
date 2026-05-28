@@ -116,7 +116,8 @@ export function LobbyChat({ lobbyId }: Props) {
         {messages.map((msg) => {
           const isMe = msg.senderId === user?.id;
           const alreadyLiked = likedUsers.has(msg.senderId);
-          const messageTime = msg.createdAt ? formatMessageTime(msg.createdAt) : '';
+          const ts = msg.createdAt ?? msg.sentAt;
+          const messageTime = ts ? formatMessageTime(ts) : '';
           return (
             <div key={msg.id} className={`flex items-end gap-2 ${isMe ? 'flex-row-reverse' : ''}`}>
               <div className={isMe ? 'flex-col-reverse' : 'flex-col'} style={{ display: 'flex' }}>
