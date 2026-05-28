@@ -43,7 +43,9 @@ export function registerSocketHandlers(io: Server): void {
         socket.data.username = u.username;
         socket.data.avatar = u.avatar;
       }
-    } catch { /* fallback below */ } finally {
+    } catch (err) {
+      console.error('[socket] failed to fetch user info:', (err as Error).message);
+    } finally {
       await infoSession.close();
     }
     if (!socket.data.username) {
@@ -74,8 +76,16 @@ export function registerSocketHandlers(io: Server): void {
         createdAt: new Date(),
       };
       const mongo = getDb();
-      if (!mongo) return;
-      await saveMessage(mongo, doc);
+      if (!mongo) {
+        console.warn('[socket] MongoDB not available — dropping direct message');
+        return;
+      }
+      try {
+        await saveMessage(mongo, doc);
+      } catch (err) {
+        console.error('[socket] failed to save direct message:', (err as Error).message);
+        return;
+      }
 
       io.to(data.roomId).emit('new_message', {
         id: doc.id,
@@ -115,8 +125,16 @@ export function registerSocketHandlers(io: Server): void {
         createdAt: new Date(),
       };
       const mongo = getDb();
-      if (!mongo) return;
-      await saveMessage(mongo, doc);
+      if (!mongo) {
+        console.warn('[socket] MongoDB not available — dropping lobby message');
+        return;
+      }
+      try {
+        await saveMessage(mongo, doc);
+      } catch (err) {
+        console.error('[socket] failed to save lobby message:', (err as Error).message);
+        return;
+      }
 
       io.to('lobby:' + data.lobbyId).emit('new_lobby_message', {
         id: doc.id,
