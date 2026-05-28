@@ -102,12 +102,17 @@ export const Q = {
     WITH candidate,
       collect(CASE WHEN og IS NOT NULL THEN { game: properties(og), role: op.role, rankId: op.rankId, rankTier: op.rankTier, isLookingNow: op.isLookingNow, timeSlots: ogSlotIds } ELSE null END) AS rawGames
     WITH candidate, rawGames,
-      [(()-[rate:RATED]->(candidate)) | toFloat(rate.stars)] AS ratingList
+      [(reviewer)-[rate:RATED]->(candidate) | toFloat(rate.stars)] AS ratingList
     WITH candidate, rawGames,
       CASE WHEN size(ratingList) = 0 THEN 0.0 ELSE reduce(s = 0.0, v IN ratingList | s + v) / toFloat(size(ratingList)) END AS avgRating
+    OPTIONAL MATCH (candidate)-[:HAS_PLAY_HOURS]->(ph:PlayHours)
+    WITH candidate, rawGames, avgRating, ph
+    WHERE ($playHoursStart IS NULL AND $playHoursEnd IS NULL)
+      OR (ph IS NOT NULL AND ph.startHour <= $playHoursEnd AND ph.endHour >= $playHoursStart)
     RETURN candidate,
       [x IN rawGames WHERE x IS NOT NULL] AS games,
       [(candidate)-[gr:AVAILABLE_AT]->(gts:TimeSlot) WHERE gr.gameId IS NULL | gts.id] AS generalSlots,
+      CASE WHEN ph IS NOT NULL THEN { startHour: ph.startHour, endHour: ph.endHour } ELSE null END AS playHours,
       avgRating
     ORDER BY avgRating DESC, rand()
     LIMIT $limit
@@ -420,7 +425,7 @@ export const Q = {
     WITH candidate,
       collect(CASE WHEN og IS NOT NULL THEN { game: properties(og), role: op.role, rankId: op.rankId, rankTier: op.rankTier, isLookingNow: op.isLookingNow, timeSlots: ogSlotIds } ELSE null END) AS rawGames
     WITH candidate, rawGames,
-      [(()-[rate:RATED]->(candidate)) | toFloat(rate.stars)] AS ratingList
+      [(reviewer)-[rate:RATED]->(candidate) | toFloat(rate.stars)] AS ratingList
     WITH candidate, rawGames,
       CASE WHEN size(ratingList) = 0 THEN 0.0 ELSE reduce(s = 0.0, v IN ratingList | s + v) / toFloat(size(ratingList)) END AS avgRating
     OPTIONAL MATCH (candidate)-[:HAS_PLAY_HOURS]->(ph:PlayHours)
