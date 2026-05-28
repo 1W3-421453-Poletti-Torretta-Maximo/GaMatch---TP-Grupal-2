@@ -9,7 +9,7 @@ import { getSocket } from '../../lib/socket';
 const SWIPE_THRESHOLD = 120;
 
 export function SwipeDeck() {
-  const { candidates, fetchCandidates, removeTop, isLoading, isFetching, hasMore } = useSwipeStore();
+  const { candidates, fetchCandidates, removeTop, isLoading, isFetching, hasMore, setFilters } = useSwipeStore();
 
   // Initial fetch on mount
   useEffect(() => {
@@ -91,7 +91,7 @@ export function SwipeDeck() {
         <button
           onClick={async () => {
             await api.delete('/swipe/dislikes');
-            fetchCandidates();
+            setFilters({});
           }}
           className="px-4 py-2 rounded-full border border-brand-400 text-brand-600 font-medium text-sm hover:bg-brand-50 transition"
         >
@@ -138,7 +138,7 @@ export function SwipeDeck() {
     <button
       onClick={async () => {
         await api.delete('/swipe/dislikes');
-        fetchCandidates();
+        setFilters({});
       }}
       className="text-xs text-gray-400 hover:text-brand-500 underline underline-offset-2 transition"
     >
