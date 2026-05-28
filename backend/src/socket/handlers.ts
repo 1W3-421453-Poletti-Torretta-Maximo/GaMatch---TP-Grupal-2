@@ -73,7 +73,9 @@ export function registerSocketHandlers(io: Server): void {
         channelType: 'direct' as const,
         createdAt: new Date(),
       };
-      await saveMessage(getDb(), doc);
+      const mongo = getDb();
+      if (!mongo) return;
+      await saveMessage(mongo, doc);
 
       io.to(data.roomId).emit('new_message', {
         id: doc.id,
@@ -112,7 +114,9 @@ export function registerSocketHandlers(io: Server): void {
         channelType: 'lobby' as const,
         createdAt: new Date(),
       };
-      await saveMessage(getDb(), doc);
+      const mongo = getDb();
+      if (!mongo) return;
+      await saveMessage(mongo, doc);
 
       io.to('lobby:' + data.lobbyId).emit('new_lobby_message', {
         id: doc.id,

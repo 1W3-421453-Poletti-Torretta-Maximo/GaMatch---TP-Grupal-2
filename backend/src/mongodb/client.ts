@@ -20,10 +20,6 @@ export async function connectToMongo(): Promise<Db | null> {
   return db;
 }
 
-export function getDb(): Db {
-  if (!db) {
-    if (missing) throw new Error('MONGODB_URI not configured');
-    throw new Error('MongoDB not connected. Call connectToMongo() first.');
-  }
+export function getDb(): Db | null {
   return db;
 }

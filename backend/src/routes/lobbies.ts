@@ -93,7 +93,9 @@ export default async function lobbyRoutes(app: FastifyInstance) {
     const query = req.query as { limit?: string };
     const limit = Math.min(parseInt(query.limit ?? '50'), 100);
 
-    const docs = await getMessages(getDb(), lobbyId, 'lobby', limit);
+    const mongo = getDb();
+    if (!mongo) return reply.send([]);
+    const docs = await getMessages(mongo, lobbyId, 'lobby', limit);
     const messages = docs.map((d) => ({
       id: d.id,
       content: d.content,
