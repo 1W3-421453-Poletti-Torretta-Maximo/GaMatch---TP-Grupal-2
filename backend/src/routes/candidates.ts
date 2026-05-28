@@ -2,27 +2,10 @@ import { FastifyInstance, FastifyRequest } from 'fastify';
 import { getSession } from '../neo4j/driver.js';
 import { Q } from '../neo4j/queries.js';
 import { requireAuth, JwtPayload } from '../middleware/auth.js';
-import neo4j from 'neo4j-driver'; // 1. Agrega esto para tipar los números
+import { parseNeo4jValue } from '../neo4j/utils.js';
+import neo4j from 'neo4j-driver';
 
 type AuthRequest = { user: JwtPayload };
-
-function parseNeo4jValues(obj: any): any {
-  if (obj === null || obj === undefined) return obj;
-  if (typeof obj === 'object' && typeof obj.toNumber === 'function') {
-    return obj.toNumber();
-  }
-  if (Array.isArray(obj)) {
-    return obj.map(parseNeo4jValues);
-  }
-  if (typeof obj === 'object') {
-    const result: any = {};
-    for (const key in obj) {
-      result[key] = parseNeo4jValues(obj[key]);
-    }
-    return result;
-  }
-  return obj;
-}
 
 export default async function candidateRoutes(app: FastifyInstance) {
   app.get('/', { preHandler: [requireAuth as any] }, async (req, reply) => {
@@ -72,7 +55,7 @@ export default async function candidateRoutes(app: FastifyInstance) {
         const rawPlayHours = r.get('playHours');
         const rawAvgRating = r.get('avgRating');
 
-        return parseNeo4jValues({
+        return parseNeo4jValue({
           ...rawProperties,
           games: rawGames,
           generalTimeSlots: rawGeneralSlots,

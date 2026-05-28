@@ -3,6 +3,8 @@ import { z } from 'zod';
 import { getSession } from '../neo4j/driver.js';
 import { Q } from '../neo4j/queries.js';
 import { requireAuth, JwtPayload } from '../middleware/auth.js';
+import { parseNeo4jValue } from '../neo4j/utils.js';
+import neo4j from 'neo4j-driver';
 
 type AuthRequest = { user: JwtPayload };
 
@@ -70,7 +72,7 @@ export default async function matchRoutes(app: FastifyInstance) {
 
     reply.send({
       rated: true,
-      stars: (result.records[0].get('stars') as any).toNumber(),
+      stars: parseNeo4jValue(result.records[0].get('stars')),
       ratedAt: result.records[0].get('ratedAt'),
     });
   });

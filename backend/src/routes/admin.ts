@@ -3,6 +3,7 @@ import { getSession } from '../neo4j/driver.js';
 import { Q } from '../neo4j/queries.js';
 import { requireAuth } from '../middleware/auth.js';
 import { requireAdmin } from '../middleware/admin.js';
+import { parseNeo4jValue } from '../neo4j/utils.js';
 
 export default async function adminRoutes(app: FastifyInstance) {
   app.get('/stats', { preHandler: [requireAuth, requireAdmin] }, async (_req, reply) => {
@@ -12,18 +13,18 @@ export default async function adminRoutes(app: FastifyInstance) {
       const row = result.records[0];
 
       reply.send({
-        totalUsers: (row.get('totalUsers') as any).toNumber(),
-        totalMatches: (row.get('totalMatches') as any).toNumber(),
+        totalUsers: parseNeo4jValue(row.get('totalUsers')),
+        totalMatches: parseNeo4jValue(row.get('totalMatches')),
         topGames: (row.get('topGames') as any[]).map((g: any) => ({
           name: g.name,
-          count: g.count.toNumber(),
+          count: parseNeo4jValue(g.count),
         })),
         topUsers: (row.get('topUsers') as any[]).map((u: any) => ({
           username: u.username,
-          count: u.count.toNumber(),
+          count: parseNeo4jValue(u.count),
         })),
-        avgRating: row.get('avgRating') != null ? (row.get('avgRating') as any).toNumber() : null,
-        totalRatings: (row.get('totalRatings') as any).toNumber(),
+        avgRating: parseNeo4jValue(row.get('avgRating')),
+        totalRatings: parseNeo4jValue(row.get('totalRatings')),
       });
     } finally {
       await session.close();
