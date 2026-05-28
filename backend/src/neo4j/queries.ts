@@ -30,7 +30,7 @@ export const Q = {
     WITH u, collect(CASE WHEN g IS NOT NULL THEN { game: properties(g), role: p.role, rankId: p.rankId, rankTier: p.rankTier, isLookingNow: p.isLookingNow, timeSlots: gameSlotIds } ELSE null END) AS games
     OPTIONAL MATCH (u)-[:HAS_PLAY_HOURS]->(ph:PlayHours)
     RETURN u,
-      [x IN collect(CASE WHEN x IS NOT NULL THEN x ELSE null END) | x WHERE x IS NOT NULL] AS games,
+      [x IN games WHERE x IS NOT NULL] AS games,
       ph AS playHours
   `,
 
