@@ -26,6 +26,10 @@ export const useAuthStore = create<AuthState>((set) => ({
     const { data } = await api.get('/auth/me');
     set({ user: data.user, games: data.games, isLoading: false });
     connectSocket();
+    try {
+      const tsData = await api.get('/users/me/timeslots');
+      set({ timeSlots: (tsData.data as { id: string }[]).map((ts) => ts.id) });
+    } catch {}
   },
 
   logout: () => {

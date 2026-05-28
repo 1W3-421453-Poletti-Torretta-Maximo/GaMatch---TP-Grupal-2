@@ -127,6 +127,12 @@ export default function Matches() {
                             </span>
                           ) : null
                         )}
+                        {/* General timeslots */}
+                        {m.generalTimeSlots && m.generalTimeSlots.length > 0 && (
+                          <span className="text-xs ml-1" title="Disponibilidad general">
+                            {m.generalTimeSlots.map((sid) => timeslotIcons[sid] ?? '').join(' ')}
+                          </span>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">

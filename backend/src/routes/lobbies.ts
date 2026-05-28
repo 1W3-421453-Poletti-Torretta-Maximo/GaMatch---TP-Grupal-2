@@ -75,6 +75,17 @@ export default async function lobbyRoutes(app: FastifyInstance) {
     reply.code(200).send({ ok: true });
   });
 
+  // DELETE /:lobbyId/join — leave a lobby (persisted)
+  app.delete('/:lobbyId/join', { preHandler: requireAuth }, async (req, reply) => {
+    const { userId } = (req as typeof req & AuthRequest).user;
+    const { lobbyId } = req.params as { lobbyId: string };
+
+    const session = getSession();
+    await session.run(Q.LEAVE_LOBBY, { userId, lobbyId });
+    await session.close();
+    reply.code(200).send({ ok: true });
+  });
+
   // GET /:lobbyId/messages?limit=50
   app.get('/:lobbyId/messages', { preHandler: requireAuth }, async (req, reply) => {
     const { lobbyId } = req.params as { lobbyId: string };

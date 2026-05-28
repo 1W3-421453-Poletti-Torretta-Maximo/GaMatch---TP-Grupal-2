@@ -41,6 +41,7 @@ export default async function candidateRoutes(app: FastifyInstance) {
     const query = req.query as any;
 
     const gameIds = query.gameIds ? query.gameIds.split(',') : [];
+    const timeSlotIds = query.timeSlotIds ? query.timeSlotIds.split(',') : [];
     const onlineOnly = query.onlineOnly === 'true';
     const parsedTolerance = parseInt(query.rankTolerance ?? '');
     const rankTolerance = isNaN(parsedTolerance) ? -1 : parsedTolerance;
@@ -48,12 +49,13 @@ export default async function candidateRoutes(app: FastifyInstance) {
     const limit = Math.min(isNaN(parsedLimit) ? 10 : parsedLimit, 50);
 
     const session = getSession();
-    
+
     try {
       // Fetch candidates
       const result = await session.run(Q.GET_CANDIDATES, {
         myId: myId,
         gameIds: gameIds,
+        timeSlotIds: timeSlotIds,
         onlineOnly: onlineOnly,
         rankTolerance: neo4j.int(rankTolerance),
         limit: neo4j.int(limit),
@@ -62,10 +64,12 @@ export default async function candidateRoutes(app: FastifyInstance) {
       const candidates = result.records.map((r) => {
         const rawProperties = r.get('candidate').properties;
         const rawGames = r.get('games');
-        
+        const rawGeneralSlots = r.get('generalSlots');
+
         return parseNeo4jValues({
           ...rawProperties,
           games: rawGames,
+          generalTimeSlots: rawGeneralSlots,
         });
       });
 

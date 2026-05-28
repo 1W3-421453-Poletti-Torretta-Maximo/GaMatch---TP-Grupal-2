@@ -1,15 +1,22 @@
 import { useEffect, useState } from 'react';
-import type { GameWithMeta } from '../types';
+import type { GameWithMeta, TimeSlot } from '../types';
 import { useSwipeStore } from '../store/swipeStore';
+import { useAuthStore } from '../store/authStore';
 import api from '../lib/api';
 
 export default function Settings() {
   const [catalog, setCatalog] = useState<GameWithMeta[]>([]);
+  const [timeslots, setTimeslots] = useState<TimeSlot[]>([]);
   const { filters, setFilters, fetchCandidates } = useSwipeStore();
+  const { games: userGames, timeSlots: userTimeSlots } = useAuthStore();
   const [applied, setApplied] = useState(false);
+
+  const userGameIds = new Set(userGames.map((g) => g.game.id));
+  const timeslotIcons: Record<string, string> = { morning: '🌅', afternoon: '☀️', night: '🌙' };
 
   useEffect(() => {
     api.get<GameWithMeta[]>('/games').then(({ data }) => setCatalog(data));
+    api.get<TimeSlot[]>('/timeslots').then(({ data }) => setTimeslots(data));
   }, []);
 
   const toggleGame = (id: string) => {
@@ -80,7 +87,7 @@ export default function Settings() {
       </section>
 
       {/* Game filter */}
-      <section className="bg-white rounded-2xl p-4 border border-gray-100 mb-6">
+      <section className="bg-white rounded-2xl p-4 border border-gray-100 mb-4">
         <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-3">
           Filtrar por juego
         </label>
@@ -90,14 +97,19 @@ export default function Settings() {
         <div className="flex flex-wrap gap-2">
           {catalog.map((g) => {
             const active = filters.gameIds.includes(g.id);
+            const inProfile = userGameIds.has(g.id);
             return (
               <button
                 key={g.id}
-                onClick={() => toggleGame(g.id)}
+                onClick={() => inProfile && toggleGame(g.id)}
+                disabled={!inProfile}
+                title={!inProfile ? 'No tenés este juego en tu perfil' : undefined}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium transition border
                   ${active
                     ? 'bg-brand-600 text-white border-brand-600'
-                    : 'bg-white text-gray-600 border-gray-200 hover:border-brand-300'}`}
+                    : inProfile
+                      ? 'bg-white text-gray-600 border-gray-200 hover:border-brand-300'
+                      : 'bg-gray-50 text-gray-300 border-gray-100 cursor-not-allowed'}`}
               >
                 {g.name}
               </button>
@@ -105,6 +117,47 @@ export default function Settings() {
           })}
         </div>
       </section>
+
+      {/* Timeslot filter */}
+      {timeslots.length > 0 && (
+        <section className="bg-white rounded-2xl p-4 border border-gray-100 mb-6">
+          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-3">
+            Filtrar por horario
+          </label>
+          <p className="text-xs text-gray-400 mb-3">
+            {filters.timeSlotIds.length === 0 ? 'Cualquier horario' : `${filters.timeSlotIds.length} franja(s) seleccionada(s)`}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {timeslots.map((ts) => {
+              const active = filters.timeSlotIds.includes(ts.id);
+              const inProfile = userTimeSlots.includes(ts.id);
+              return (
+                <button
+                  key={ts.id}
+                  onClick={() => {
+                    if (!inProfile) return;
+                    const updated = filters.timeSlotIds.includes(ts.id)
+                      ? filters.timeSlotIds.filter((id) => id !== ts.id)
+                      : [...filters.timeSlotIds, ts.id];
+                    setFilters({ timeSlotIds: updated });
+                  }}
+                  disabled={!inProfile}
+                  title={!inProfile ? 'No tenés este horario en tu perfil' : undefined}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition border
+                    ${active
+                      ? 'bg-brand-600 text-white border-brand-600'
+                      : inProfile
+                        ? 'bg-white text-gray-600 border-gray-200 hover:border-brand-300'
+                        : 'bg-gray-50 text-gray-300 border-gray-100 cursor-not-allowed'}`}
+                >
+                  <span>{timeslotIcons[ts.id] ?? ''}</span>
+                  <span>{ts.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       <button
         onClick={applyFilters}

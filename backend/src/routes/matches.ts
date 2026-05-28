@@ -14,10 +14,11 @@ export default async function matchRoutes(app: FastifyInstance) {
     await session.close();
 
     const matches = result.records.map((r) => ({
-      user:      r.get('other').properties,
-      roomId:    r.get('roomId'),
-      matchedAt: r.get('matchedAt'),
-      games:     r.get('games'),
+      user:             r.get('other').properties,
+      roomId:           r.get('roomId'),
+      matchedAt:        r.get('matchedAt'),
+      games:            r.get('games'),
+      generalTimeSlots: r.get('generalSlots'),
     }));
     reply.send(matches);
   });

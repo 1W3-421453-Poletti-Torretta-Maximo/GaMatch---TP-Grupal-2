@@ -40,15 +40,19 @@ export function SwipeCard({ candidate, style, onLike, onDislike, isTop }: Props)
         )}
         <div className="flex flex-wrap gap-1.5 mb-4">
           {candidate.games.slice(0, 3).map((g, i) => (
-            <GameBadge key={i} game={g} size="sm" />
+            <span key={i} className="flex items-center gap-0.5">
+              <GameBadge game={g} size="sm" />
+              {g.timeSlots && g.timeSlots.length > 0 && (
+                <span className="text-xs leading-none">
+                  {g.timeSlots.map((sid) => ({ morning: '🌅', afternoon: '☀️', night: '🌙' } as Record<string, string>)[sid] ?? '').join('')}
+                </span>
+              )}
+            </span>
           ))}
-          {/* Timeslot icons per game */}
-          {candidate.games.slice(0, 3).map((g, i) =>
-            g.timeSlots && g.timeSlots.length > 0 ? (
-              <span key={`ts-${i}`} className="text-xs">
-                {g.timeSlots.map((sid) => ({ morning: '🌅', afternoon: '☀️', night: '🌙' })[sid] ?? '').join(' ')}
-              </span>
-            ) : null
+          {candidate.generalTimeSlots && candidate.generalTimeSlots.length > 0 && (
+            <span className="text-xs bg-white/20 rounded-full px-2 py-0.5">
+              {candidate.generalTimeSlots.map((sid) => ({ morning: '🌅', afternoon: '☀️', night: '🌙' } as Record<string, string>)[sid] ?? '').join(' ')}
+            </span>
           )}
         </div>
 

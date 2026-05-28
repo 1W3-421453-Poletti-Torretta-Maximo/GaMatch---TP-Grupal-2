@@ -48,6 +48,7 @@ export interface User {
 
 export interface Candidate extends User {
   games: UserGame[];
+  generalTimeSlots?: string[];
 }
 
 export interface Match {
@@ -55,6 +56,7 @@ export interface Match {
   roomId: string;
   matchedAt: string;
   games: UserGame[];
+  generalTimeSlots?: string[];
 }
 
 export interface Message {
@@ -95,4 +97,5 @@ export interface SwipeFilters {
   gameIds: string[];
   onlineOnly: boolean;
   rankTolerance: number;
+  timeSlotIds: string[];
 }

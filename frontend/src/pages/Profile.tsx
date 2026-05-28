@@ -4,7 +4,7 @@ import type { GameWithMeta, TimeSlot } from '../types';
 import api from '../lib/api';
 import { AvatarDisplay } from '../components/AvatarDisplay/AvatarDisplay';
 import { GameBadge } from '../components/GameBadge/GameBadge';
-import { Plus, Trash2, LogOut, Shuffle } from 'lucide-react';
+import { Plus, Trash2, LogOut, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function Profile() {
   const { user, games, refreshProfile, logout } = useAuthStore();
@@ -15,6 +15,8 @@ export default function Profile() {
   const [addingGame, setAddingGame] = useState(false);
   const [form, setForm] = useState({ gameId: '', role: '', rankId: '', rankTier: 0, isLookingNow: false, timeSlots: [] as string[] });
   const [timeslots, setTimeslots] = useState<TimeSlot[]>([]);
+  const [seedList, setSeedList] = useState<string[]>(() => [user?.avatarSeed ?? user?.id ?? '']);
+  const [seedIdx, setSeedIdx] = useState(0);
   const selectedSlots = useAuthStore((s) => s.timeSlots);
   const setTimeSlots = useAuthStore((s) => s.setTimeSlots);
 
@@ -46,6 +48,31 @@ export default function Profile() {
     setForm({ gameId: '', role: '', rankId: '', rankTier: 0, isLookingNow: false, timeSlots: [] });
   };
 
+  const prevAvatar = () => {
+    if (seedIdx > 0) {
+      const i = seedIdx - 1;
+      setSeedIdx(i);
+      setAvatarSeedLocal(seedList[i]);
+    } else {
+      const s = Math.random().toString(36).slice(2, 10);
+      setSeedList((prev) => [s, ...prev]);
+      setAvatarSeedLocal(s);
+    }
+  };
+
+  const nextAvatar = () => {
+    if (seedIdx < seedList.length - 1) {
+      const i = seedIdx + 1;
+      setSeedIdx(i);
+      setAvatarSeedLocal(seedList[i]);
+    } else {
+      const s = Math.random().toString(36).slice(2, 10);
+      setSeedList((prev) => [...prev, s]);
+      setSeedIdx((i) => i + 1);
+      setAvatarSeedLocal(s);
+    }
+  };
+
   const selectedGame = catalog.find((g) => g.id === form.gameId);
 
   if (!user) return null;
@@ -54,18 +81,21 @@ export default function Profile() {
     <main className="flex-1 pb-20 pt-6 px-4 max-w-md mx-auto w-full">
       {/* Header */}
       <div className="flex flex-col items-center mb-6">
-        <div className="relative mb-3">
+        <div className="flex items-center gap-3 mb-3">
+          <button
+            onClick={prevAvatar}
+            className="h-8 w-8 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center hover:bg-gray-200 transition shadow-sm"
+            title="Avatar anterior"
+          >
+            <ChevronLeft size={16} />
+          </button>
           <AvatarDisplay seed={avatarSeed || user.id} size={80} className="rounded-full border-4 border-brand-300 overflow-hidden" />
           <button
-            onClick={() => {
-              const newSeed = Math.random().toString(36).substring(2, 10);
-              setAvatarSeedLocal(newSeed);
-              useAuthStore.getState().setAvatarSeed(newSeed);
-            }}
-            className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-brand-600 text-white flex items-center justify-center hover:bg-brand-700 transition shadow-md"
-            title="Regenerar avatar"
+            onClick={nextAvatar}
+            className="h-8 w-8 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center hover:bg-gray-200 transition shadow-sm"
+            title="Avatar siguiente"
           >
-            <Shuffle size={14} />
+            <ChevronRight size={16} />
           </button>
         </div>
         <h2 className="text-xl font-bold text-gray-800">{user.username}</h2>
@@ -153,6 +183,11 @@ export default function Profile() {
           {games.map((g, i) => (
             <div key={i} className="flex items-center gap-1 group">
               <GameBadge game={g} />
+              {g.timeSlots && g.timeSlots.length > 0 && (
+                <span className="text-xs text-gray-500">
+                  {g.timeSlots.map((sid) => ({ morning: '🌅', afternoon: '☀️', night: '🌙' } as Record<string, string>)[sid] ?? '').join('')}
+                </span>
+              )}
               <button
                 onClick={() => removeGame(g.game.id)}
                 className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 transition"

@@ -24,6 +24,7 @@ export const useSwipeStore = create<SwipeState>((set, get) => ({
     gameIds: [],
     onlineOnly: false,
     rankTolerance: 2,
+    timeSlotIds: [],
   },
 
   fetchCandidates: async () => {
@@ -38,6 +39,7 @@ export const useSwipeStore = create<SwipeState>((set, get) => ({
       onlineOnly: String(filters.onlineOnly),
     };
     if (filters.gameIds.length) params.gameIds = filters.gameIds.join(',');
+    if (filters.timeSlotIds.length) params.timeSlotIds = filters.timeSlotIds.join(',');
 
     try {
       const { data } = await api.get<Candidate[]>('/candidates', { params });

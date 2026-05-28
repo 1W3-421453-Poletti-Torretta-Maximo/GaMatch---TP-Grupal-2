@@ -1,14 +1,23 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, LogOut } from 'lucide-react';
 import type { Lobby } from '../types';
 import api from '../lib/api';
 import { LobbyChat } from '../components/LobbyChat/LobbyChat';
+import { useLobbyStore } from '../store/lobbyStore';
 
 export default function LobbyChatRoom() {
   const { lobbyId } = useParams<{ lobbyId: string }>();
   const [lobby, setLobby] = useState<Lobby | null>(null);
   const navigate = useNavigate();
+  const { leaveLobby } = useLobbyStore();
+
+  const handleLeave = async () => {
+    if (!lobbyId) return;
+    try { await api.delete(`/lobbies/${lobbyId}/join`); } catch {}
+    leaveLobby(lobbyId);
+    navigate('/matches');
+  };
 
   useEffect(() => {
     if (!lobbyId) return;
@@ -32,10 +41,17 @@ export default function LobbyChatRoom() {
         >
           <ChevronLeft size={22} />
         </button>
-        <div>
+        <div className="flex-1">
           <p className="font-semibold text-sm text-gray-800">{lobby?.name ?? 'Lobby'}</p>
           {lobby?.gameName && <p className="text-xs text-gray-400">{lobby.gameName}</p>}
         </div>
+        <button
+          onClick={handleLeave}
+          className="p-1.5 rounded-lg text-red-400 hover:bg-red-50 transition"
+          title="Salir del lobby"
+        >
+          <LogOut size={18} />
+        </button>
       </header>
       <div className="flex-1 w-full bg-white relative">
         <LobbyChat lobbyId={lobbyId} />

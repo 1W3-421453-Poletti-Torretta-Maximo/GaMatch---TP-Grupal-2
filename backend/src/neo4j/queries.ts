@@ -91,12 +91,19 @@ export const Q = {
          [ts IN collect(DISTINCT theirTs) WHERE ts IS NOT NULL | ts.id] AS theirSlotIds
     WHERE size(mySlotIds) = 0 OR any(s IN mySlotIds WHERE s IN theirSlotIds)
     WITH DISTINCT candidate, me
+    WHERE size($timeSlotIds) = 0 OR size([(candidate)-[gtr:AVAILABLE_AT]->(ts2:TimeSlot) WHERE gtr.gameId IS NULL AND ts2.id IN $timeSlotIds | ts2]) > 0
+    WITH DISTINCT candidate
     OPTIONAL MATCH (candidate)-[op:PLAYS]->(og:Game)
     OPTIONAL MATCH (candidate)-[:AVAILABLE_AT {gameId: og.id}]->(ogTs:TimeSlot)
-    WITH candidate, me, op, og, [ts IN collect(DISTINCT ogTs) WHERE ts IS NOT NULL | ts.id] AS ogSlotIds
-    RETURN DISTINCT candidate,
-      [x IN collect(CASE WHEN og IS NOT NULL THEN { game: properties(og), role: op.role, rankId: op.rankId, rankTier: op.rankTier, isLookingNow: op.isLookingNow, timeSlots: ogSlotIds } ELSE null END) WHERE x IS NOT NULL] AS games
-    ORDER BY rand()
+    WITH candidate, op, og, [ts IN collect(DISTINCT ogTs) WHERE ts IS NOT NULL | ts.id] AS ogSlotIds
+    WITH candidate,
+      collect(CASE WHEN og IS NOT NULL THEN { game: properties(og), role: op.role, rankId: op.rankId, rankTier: op.rankTier, isLookingNow: op.isLookingNow, timeSlots: ogSlotIds } ELSE null END) AS rawGames
+    RETURN candidate,
+      [x IN rawGames WHERE x IS NOT NULL] AS games,
+      [(candidate)-[gr:AVAILABLE_AT]->(gts:TimeSlot) WHERE gr.gameId IS NULL | gts.id] AS generalSlots,
+      size([(()-[rate:RATED]->(candidate)) | rate]) AS ratingCount,
+      reduce(total = 0.0, s IN [(()-[rate:RATED]->(candidate)) | toFloat(rate.stars)] | total + s) AS ratingSum
+    ORDER BY CASE WHEN ratingCount = 0 THEN 0.0 ELSE ratingSum / ratingCount END DESC, rand()
     LIMIT $limit
   `,
 
@@ -136,7 +143,8 @@ export const Q = {
     RETURN other,
            m.roomId AS roomId,
            m.matchedAt AS matchedAt,
-           [x IN games WHERE x IS NOT NULL] AS games
+           [x IN games WHERE x IS NOT NULL] AS games,
+           [(other)-[gr:AVAILABLE_AT]->(gts:TimeSlot) WHERE gr.gameId IS NULL | gts.id] AS generalSlots
     ORDER BY m.matchedAt DESC
   `,
 
@@ -302,6 +310,11 @@ export const Q = {
   JOIN_LOBBY: `
     MATCH (u:User {id: $userId}), (l:Lobby {id: $lobbyId})
     MERGE (u)-[:JOINED]->(l)
+  `,
+
+  LEAVE_LOBBY: `
+    MATCH (u:User {id: $userId})-[r:JOINED]->(l:Lobby {id: $lobbyId})
+    DELETE r
   `,
 
   CREATE_LOBBY: `

@@ -3,6 +3,7 @@ import { Send } from 'lucide-react';
 import { useLobbyStore } from '../../store/lobbyStore';
 import { useAuthStore } from '../../store/authStore';
 import { getSocket } from '../../lib/socket';
+import api from '../../lib/api';
 
 interface Props {
   lobbyId: string;
@@ -10,6 +11,8 @@ interface Props {
 
 export function LobbyChat({ lobbyId }: Props) {
   const [input, setInput] = useState('');
+  const [likedUsers, setLikedUsers] = useState<Set<string>>(new Set());
+  const [lobbyNotif, setLobbyNotif] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const typingTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { messages, typingUsers, fetchMessages, sendMessage, addMessage, joinLobby, leaveLobby, setTypingUsers } = useLobbyStore();
@@ -44,6 +47,22 @@ export function LobbyChat({ lobbyId }: Props) {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, typingUsers]);
 
+  const handleLikeUser = async (targetId: string, senderName: string) => {
+    if (!user || likedUsers.has(targetId) || targetId === user.id) return;
+    setLikedUsers((prev) => new Set(prev).add(targetId));
+    try {
+      const { data } = await api.post<{ match: boolean; roomId?: string }>('/swipe', {
+        targetId,
+        direction: 'like',
+      });
+      const notif = data.match ? `¡GaMatch con ${senderName}! 💜` : `¡Like enviado a ${senderName}!`;
+      setLobbyNotif(notif);
+      setTimeout(() => setLobbyNotif(null), 3000);
+    } catch {
+      setLikedUsers((prev) => { const s = new Set(prev); s.delete(targetId); return s; });
+    }
+  };
+
   const send = () => {
     if (!input.trim() || !user) return;
     sendMessage(lobbyId, input.trim(), user.username);
@@ -61,9 +80,15 @@ export function LobbyChat({ lobbyId }: Props) {
 
   return (
     <div className="flex flex-col absolute inset-0">
+      {lobbyNotif && (
+        <div className="absolute top-2 left-4 right-4 z-10 bg-brand-gradient text-white text-sm font-bold text-center py-2 px-4 rounded-xl shadow-lg pointer-events-none">
+          {lobbyNotif}
+        </div>
+      )}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
         {messages.map((msg) => {
           const isMe = msg.senderId === user?.id;
+          const alreadyLiked = likedUsers.has(msg.senderId);
           return (
             <div key={msg.id} className={`flex items-end gap-2 ${isMe ? 'flex-row-reverse' : ''}`}>
               <div
@@ -73,7 +98,15 @@ export function LobbyChat({ lobbyId }: Props) {
                     : 'bg-gray-100 text-gray-800 rounded-bl-sm'}`}
               >
                 {!isMe && (
-                  <p className="text-xs font-semibold text-gray-500 mb-0.5">{msg.senderName}</p>
+                  <button
+                    onClick={() => handleLikeUser(msg.senderId, msg.senderName)}
+                    disabled={alreadyLiked}
+                    title={alreadyLiked ? 'Ya le diste like' : 'Dar like para hacer match'}
+                    className={`text-xs font-semibold mb-0.5 block text-left transition
+                      ${alreadyLiked ? 'text-brand-500 cursor-default' : 'text-gray-500 hover:text-brand-600 cursor-pointer'}`}
+                  >
+                    {msg.senderName}{alreadyLiked ? ' 💜' : ''}
+                  </button>
                 )}
                 {msg.content}
               </div>
